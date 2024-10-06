@@ -1,6 +1,8 @@
 package cpu
 
 import "core:fmt"
+import "core:io"
+import "core:strings"
 
 NesCpu :: struct {
 	a:          u8,
@@ -8,7 +10,7 @@ NesCpu :: struct {
 	y:          u8,
 	status:     u8,
 	stack_p:    u8,
-	cycles:     u8,
+	cycles:     u32,
 	pc:         u16,
 	_cpu_state: CpuState,
 }
@@ -38,6 +40,12 @@ CpuState :: struct {
 }
 
 init_cpu :: proc(bus: ^NesBus) -> NesCpu {
+
+	fmt.set_user_formatters(new(map[typeid]fmt.User_Formatter))
+
+	err := fmt.register_user_formatter(type_info_of(NesCpu).id, cpu_formatter)
+	assert(err == .None)
+
 	state := CpuState {
 		bus = bus,
 	}
@@ -88,8 +96,6 @@ clock :: proc(cpu: ^NesCpu) {
 	cpu._cpu_state.opcode_bytes[0] = read(cpu._cpu_state.bus, cpu.pc)
 	cpu._cpu_state.instruction = process_opcode(cpu._cpu_state.opcode_bytes[0])
 
-	fmt.println(cpu._cpu_state.instruction)
-
 	set_flag(cpu, .Unused, true)
 
 	cpu._cpu_state.pc = cpu.pc
@@ -100,26 +106,11 @@ clock :: proc(cpu: ^NesCpu) {
 
 	cpu._cpu_state.num_bytes = cpu.pc - cpu._cpu_state.pc
 
-	fmt.printfln(
-		"AddressLoad {:X} PC:{:X} OpAddr:0x{:4X} Status:{:X}\n",
-		cpu._cpu_state.opcode_bytes,
-		cpu.pc,
-		cpu._cpu_state.op_address,
-		cpu.status,
-	)
-
+	fmt.printfln("%v", cpu^)
 	clk2 := execute(cpu, cpu._cpu_state.instruction.mnemonic)
 
-	fmt.printfln(
-		"Execute {:X} PC:{:X} OpAddr:0x{:4X} Status:{:X}\n",
-		cpu._cpu_state.opcode_bytes,
-		cpu.pc,
-		cpu._cpu_state.op_address,
-		cpu.status,
-	)
-
 	cpu._cpu_state.step_cycles += (clk1 & clk2)
-	cpu.cycles += cpu._cpu_state.step_cycles
+	cpu.cycles += u32(cpu._cpu_state.step_cycles)
 
 	set_flag(cpu, .Unused, true)
 	cpu._cpu_state.wait_cycles = cpu._cpu_state.step_cycles - 1
@@ -207,7 +198,7 @@ set_nz :: proc(cpu: ^NesCpu, value: u8) {
 branch :: proc(cpu: ^NesCpu, addr: u16) {
 	cpu._cpu_state.step_cycles += 1
 	cpu._cpu_state.op_address = cpu.pc + addr
-	if cpu._cpu_state.op_address & 0xFF00 != cpu.pc & 0xFF00 {
+	if (cpu._cpu_state.op_address & 0xFF00) != (cpu.pc & 0xFF00) {
 		cpu._cpu_state.step_cycles += 1
 	}
 	cpu.pc = cpu._cpu_state.op_address
@@ -388,7 +379,7 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 		}
 	case .And:
 		{
-			cpu.a &= read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
+			cpu.a = cpu.a & read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
 			set_nz(cpu, cpu.a)
 			return 1
 		}
@@ -839,4 +830,171 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 		}
 	}
 	return 0
+}
+
+@(private)
+cpu_formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> bool {
+	cpu := cast(^NesCpu)arg.data
+	switch verb {
+	case 'v':
+		{
+
+			fmt.wprintf(fi.writer, "{:4X}  ", cpu._cpu_state.pc)
+
+			for idx in 0 ..= 3 {
+				if idx < int(cpu._cpu_state.num_bytes) {
+					fmt.wprintf(fi.writer, "{:2X} ", cpu._cpu_state.opcode_bytes[idx])
+				} else {
+					fmt.wprint(fi.writer, "   ")
+				}
+			}
+
+			fmt.wprintf(fi.writer, " {:s} ", cpu._cpu_state.instruction.name)
+
+			switch cpu._cpu_state.instruction.addressing_mode {
+			case .Accumilate:
+				{
+					fmt.wprintf(fi.writer, "A{:27s}", " ")
+				}
+			case .Implied:
+				{
+					fmt.wprintf(fi.writer, "{:28s}", " ")
+				}
+			case .Immediate:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"#${:2X}{:24s}",
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address),
+						" ",
+					)
+				}
+			case .ZeroPage:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"${:2X} = {:2X}{:20s}",
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, u16(cpu._cpu_state.opcode_bytes[1])),
+						" ",
+					)
+				}
+			case .ZeroPageX:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"${:2X},X @ {:2X} = {:2X}{:13s}",
+						cpu._cpu_state.op_address - u16(cpu.x),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address + u16(cpu.x)),
+						" ",
+					)
+				}
+			case .ZeroPageY:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"${:2X},Y @ {:2X} = {:2X}{:13s}",
+						cpu._cpu_state.op_address - u16(cpu.y),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address + u16(cpu.y)),
+						" ",
+					)
+				}
+			case .Absolute:
+				{
+					if cpu._cpu_state.instruction.mnemonic == .Jsr ||
+					   cpu._cpu_state.instruction.mnemonic == .Jmp {
+						fmt.wprintf(fi.writer, "${:4X}{:23s}", cpu._cpu_state.op_address, " ")
+					} else {
+						fmt.wprintf(
+							fi.writer,
+							"${:4X} = {:2X}{:18s}",
+							cpu._cpu_state.op_address,
+							read(cpu._cpu_state.bus, cpu._cpu_state.op_address),
+							" ",
+						)
+					}
+				}
+			case .AbsoluteX:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"${:4X},X @ {:4X} = {:2X}{:9s}",
+						cpu._cpu_state.op_address - u16(cpu.x),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address - u16(cpu.x)),
+						" ",
+					)
+				}
+			case .AbsoluteY:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"${:4X},Y @ {:4X} = {:2X}{:9s}",
+						cpu._cpu_state.op_address - u16(cpu.y),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address - u16(cpu.y)),
+						" ",
+					)
+				}
+			case .Indirect:
+				{
+					lo := u16(cpu._cpu_state.opcode_bytes[1])
+					hi := u16(cpu._cpu_state.opcode_bytes[2])
+					fmt.wprintf(
+						fi.writer,
+						"(${:4X}) = {:4X}{:14s}",
+						(hi << 8) | lo,
+						cpu._cpu_state.op_address,
+						" ",
+					)
+				}
+			case .IndirectX:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"(${:2X},X) @ {:2X} = {:4X} = {:2X}    ",
+						cpu._cpu_state.opcode_bytes[1],
+						u16(cpu._cpu_state.opcode_bytes[1]) + u16(cpu.x),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address + u16(cpu.x)),
+					)
+				}
+			case .IndirectY:
+				{
+					fmt.wprintf(
+						fi.writer,
+						"(${:2X}),Y = {:4X} @ {:4X} = {:2X}  ",
+						cpu._cpu_state.opcode_bytes[1],
+						cpu._cpu_state.op_address - u16(cpu.y),
+						cpu._cpu_state.op_address,
+						read(cpu._cpu_state.bus, cpu._cpu_state.op_address - u16(cpu.y)),
+					)
+				}
+			case .Relative:
+				{
+					val := read(cpu._cpu_state.bus, cpu._cpu_state.pc + 1)
+					addr := cpu._cpu_state.pc + 2
+					fmt.wprintf(fi.writer, "${:4X}{:23s}", addr + u16(val), " ")
+				}
+			}
+
+			fmt.wprintf(
+				fi.writer,
+				"A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU:{:d},{:d} CYC:{:d}",
+				cpu.a,
+				cpu.x,
+				cpu.y,
+				cpu.status,
+				cpu.stack_p,
+				0,
+				0,
+				cpu._cpu_state.total_cycles,
+			)
+		}
+	case:
+		return false
+	}
+	return true
 }
