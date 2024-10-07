@@ -2,6 +2,7 @@ package cpu
 
 import "core:fmt"
 import "core:io"
+import "core:strings"
 
 NesCpu :: struct {
 	a:          u8,
@@ -74,7 +75,7 @@ reset :: proc(cpu: ^NesCpu) {
 
 }
 
-clock :: proc(cpu: ^NesCpu, log_file: ^io.Stream) {
+clock :: proc(cpu: ^NesCpu) {
 
 	if cpu._cpu_state.wait_cycles > 0 {
 		cpu._cpu_state.wait_cycles -= 1
@@ -105,8 +106,6 @@ clock :: proc(cpu: ^NesCpu, log_file: ^io.Stream) {
 
 	cpu._cpu_state.num_bytes = cpu.pc - cpu._cpu_state.pc
 
-	fmt.wprintfln(log_file^, "%v", cpu^)
-
 	clk2 := execute(cpu, cpu._cpu_state.instruction.mnemonic)
 
 	cpu._cpu_state.step_cycles += (clk1 & clk2)
@@ -118,6 +117,138 @@ clock :: proc(cpu: ^NesCpu, log_file: ^io.Stream) {
 
 complete :: proc(cpu: ^NesCpu) -> bool {
 	return cpu._cpu_state.wait_cycles == 0
+}
+
+disassemble :: proc(
+	cpu: ^NesCpu,
+	addr_start: u16,
+	addr_end: u16,
+	allocator := context.allocator,
+) -> map[u16]string {
+	cap := addr_start - addr_end
+	ret := make(map[u16]string, cap, allocator)
+
+	addr := u32(addr_start)
+	line_addr: u16 = 0
+
+	for addr <= u32(addr_end) {
+		line_addr = u16(addr)
+
+		op := process_opcode(read(cpu._cpu_state.bus, u16(addr)))
+		addr += 1
+
+		op_str := fmt.aprintf("{:4X} : {:s}", addr - 1, op.name)
+		defer delete(op_str)
+		switch op.addressing_mode {
+		case .Accumilate:
+			{
+				str := fmt.aprint("{{ACC}}")
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .Implied:
+			{
+				str := fmt.aprint("{{IMP}}")
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .Immediate:
+			{
+				val := read(cpu._cpu_state.bus, u16(addr))
+				addr += 1
+				str := fmt.aprintf("#$ {:2X} {{IMM}}", val)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .ZeroPage:
+			{
+				val := read(cpu._cpu_state.bus, u16(addr))
+				addr += 1
+				str := fmt.aprintf("#$ {:2X} {{ZP0}}", val)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .ZeroPageX:
+			{
+				val := read(cpu._cpu_state.bus, u16(addr))
+				addr += 1
+				str := fmt.aprintf("#$ {:2X} , X {{ZPX}}", val)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .ZeroPageY:
+			{
+				val := read(cpu._cpu_state.bus, u16(addr))
+				addr += 1
+				str := fmt.aprintf("#$ {:2X} , Y {{ZPY}}", val)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .Absolute:
+			{
+				lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$ {:2X} {{ABS}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .AbsoluteX:
+			{lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$ {:2X} , X {{ABS}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")}
+		case .AbsoluteY:
+			{
+				lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$ {:2X} , Y {{ABS}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .Indirect:
+			{
+				lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$({:2X}) {{IND}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .IndirectX:
+			{
+				lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$({:2X} , X) {{IZX}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .IndirectY:
+			{
+				lo := read(cpu._cpu_state.bus, u16(addr))
+				hi := read(cpu._cpu_state.bus, u16(addr + 1))
+				addr += 2
+				str := fmt.aprintf("$({:2X} , Y) {{IND}}", (hi << 8) | lo)
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		case .Relative:
+			{
+				val := read(cpu._cpu_state.bus, u16(addr))
+				addr += 1
+				str := fmt.aprintf("${:2X} [${:2X}] {{REL}}", val, addr + u32(val))
+				defer delete(str)
+				op_str = strings.join({op_str, str}, " ")
+			}
+		}
+		ret[line_addr] = op_str
+	}
+
+	return ret
 }
 
 @(private)
