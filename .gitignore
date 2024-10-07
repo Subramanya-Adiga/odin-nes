@@ -92,3 +92,4 @@ Cargo.lock
 *.nes
 *.ttf
 *.txt
+*.log
