@@ -2,7 +2,6 @@ package cpu
 
 import "core:fmt"
 import "core:io"
-import "core:strings"
 
 NesCpu :: struct {
 	a:          u8,
@@ -75,7 +74,7 @@ reset :: proc(cpu: ^NesCpu) {
 
 }
 
-clock :: proc(cpu: ^NesCpu) {
+clock :: proc(cpu: ^NesCpu, log_file: ^io.Stream) {
 
 	if cpu._cpu_state.wait_cycles > 0 {
 		cpu._cpu_state.wait_cycles -= 1
@@ -106,7 +105,8 @@ clock :: proc(cpu: ^NesCpu) {
 
 	cpu._cpu_state.num_bytes = cpu.pc - cpu._cpu_state.pc
 
-	fmt.printfln("%v", cpu^)
+	fmt.wprintfln(log_file^, "%v", cpu^)
+
 	clk2 := execute(cpu, cpu._cpu_state.instruction.mnemonic)
 
 	cpu._cpu_state.step_cycles += (clk1 & clk2)
@@ -311,8 +311,8 @@ load_address :: proc(cpu: ^NesCpu) -> u8 {
 			data := u16(cpu._cpu_state.opcode_bytes[1])
 			cpu.pc += 1
 
-			lo := u16(read(cpu._cpu_state.bus, data + u16(cpu.x) & 0x00FF))
-			hi := u16(read(cpu._cpu_state.bus, (data + u16(cpu.x) + 1) & 0x00FF))
+			lo := u16(read(cpu._cpu_state.bus, u16(data + u16(cpu.x)) & 0x00FF))
+			hi := u16(read(cpu._cpu_state.bus, u16(data + u16(cpu.x) + 1) & 0x00FF))
 
 			cpu._cpu_state.op_address = (hi << 8) | lo
 			return 0
@@ -392,6 +392,7 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 			} else {
 				op := read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
 				res := op << 1
+				write(cpu._cpu_state.bus, cpu._cpu_state.op_address, res)
 				set_flag(cpu, .Carry, (op >> 7) != 0)
 				set_nz(cpu, res)
 			}
@@ -500,7 +501,7 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 		{
 			tmp := read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
 			res := cpu.a - tmp
-			set_flag(cpu, .Overflow, cpu.a >= tmp)
+			set_flag(cpu, .Carry, cpu.a >= tmp)
 			set_nz(cpu, res)
 			return 1
 		}
@@ -508,7 +509,7 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 		{
 			tmp := read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
 			res := cpu.x - tmp
-			set_flag(cpu, .Overflow, cpu.x >= tmp)
+			set_flag(cpu, .Carry, cpu.x >= tmp)
 			set_nz(cpu, res)
 			return 0
 		}
@@ -516,7 +517,7 @@ execute :: proc(cpu: ^NesCpu, mnemonic: Mnemonic) -> u8 {
 		{
 			tmp := read(cpu._cpu_state.bus, cpu._cpu_state.op_address)
 			res := cpu.y - tmp
-			set_flag(cpu, .Overflow, cpu.y >= tmp)
+			set_flag(cpu, .Carry, cpu.y >= tmp)
 			set_nz(cpu, res)
 			return 0
 		}
@@ -956,7 +957,7 @@ cpu_formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> bool {
 						fi.writer,
 						"(${:2X},X) @ {:2X} = {:4X} = {:2X}    ",
 						cpu._cpu_state.opcode_bytes[1],
-						u16(cpu._cpu_state.opcode_bytes[1]) + u16(cpu.x),
+						cpu._cpu_state.opcode_bytes[1] + cpu.x,
 						cpu._cpu_state.op_address,
 						read(cpu._cpu_state.bus, cpu._cpu_state.op_address + u16(cpu.x)),
 					)
