@@ -1,5 +1,8 @@
 package main
 
+import im "../thirdparty/imgui"
+import "../thirdparty/imgui/imgui_impl_opengl3"
+import "../thirdparty/imgui/imgui_impl_sdl2"
 import "core:fmt"
 import "cpu"
 import gl "vendor:OpenGL"
@@ -56,23 +59,44 @@ main :: proc() {
 
 	gl.load_up_to(3, 0, sdl2.gl_set_proc_address)
 
+	im.CHECKVERSION()
+	im.CreateContext()
+	defer im.DestroyContext()
+
+	io := im.GetIO()
+	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
+	im.StyleColorsDark()
+
+	imgui_impl_sdl2.InitForOpenGL(window, gl_context)
+	defer imgui_impl_sdl2.Shutdown()
+
+	imgui_impl_opengl3.Init("#version 130")
+	defer imgui_impl_opengl3.Shutdown()
+
 	done := false
 
 	for !done {
 		event: sdl2.Event
 		for sdl2.PollEvent(&event) {
+			imgui_impl_sdl2.ProcessEvent(&event)
 			if event.type == sdl2.EventType.QUIT {
 				done = true
 			}
 		}
 
-		x: i32
-		y: i32
-		sdl2.GetWindowSize(window, &x, &y)
+		imgui_impl_opengl3.NewFrame()
+		imgui_impl_sdl2.NewFrame()
+		im.NewFrame()
 
-		gl.Viewport(0, 0, x, y)
+		im.ShowDemoWindow()
+
+		im.Render()
+		gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
 		gl.ClearColor(0.556, 0.629, 0.830, 255.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
+
+		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
+
 		sdl2.GL_SwapWindow(window)
 	}
 
