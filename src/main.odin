@@ -1,7 +1,13 @@
 package main
 
-import "core:fmt"
+import "cpu"
+import "vendor:raylib"
 
 main :: proc() {
-	fmt.println("hellope")
+	bus: cpu.NesBus = {}
+	cpu.load_cartridge(&bus, "nestest.nes")
+
+	nes_cpu := cpu.init_cpu(&bus)
+	cpu.reset(&nes_cpu)
+
 }
