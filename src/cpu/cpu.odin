@@ -282,7 +282,7 @@ nmi :: proc(cpu: ^NesCpu) {
 	set_flag(cpu, NesCpuFlags.Unused, true)
 	set_flag(cpu, NesCpuFlags.IntruptDisable, true)
 
-	cpu._cpu_state.op_address = 0xFFFE
+	cpu._cpu_state.op_address = 0xFFFA
 
 	lo := u16(read(cpu._cpu_state.bus, cpu._cpu_state.op_address))
 	hi := u16(read(cpu._cpu_state.bus, cpu._cpu_state.op_address + 1))
