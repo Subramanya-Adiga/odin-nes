@@ -3,8 +3,6 @@ package cartridge
 import "core:/io"
 import "core:fmt"
 import "core:os"
-import "mappers"
-
 Cartridge :: struct {
 	valid_image: bool,
 	prog_banks:  u8,
@@ -18,7 +16,6 @@ CartridgeState :: struct {
 	prog_rom: [dynamic]u8,
 	stream:   ^io.Stream,
 	char_rom: [dynamic]u8,
-	mapper:   ^mappers.Mapper,
 }
 
 init :: proc(file_stream: ^io.Stream) -> Cartridge {
