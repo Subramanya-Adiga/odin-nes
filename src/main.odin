@@ -15,63 +15,13 @@ main :: proc() {
 	nes_cpu := cpu.init_cpu(&bus)
 	cpu.reset(&nes_cpu)
 
-	//Initialize SDL
-	init_val := sdl2.Init(
-		sdl2.INIT_AUDIO | sdl2.INIT_VIDEO | sdl2.INIT_EVENTS | sdl2.INIT_GAMECONTROLLER,
-	)
-	if init_val != 0 {
-		fmt.printf("SDL2 Failed To Initialize {}\n", sdl2.GetError())
-	}
-	defer sdl2.Quit()
+	sdl_ctx := init_sdl()
+	defer deinit_sdl(&sdl_ctx)
 
-	//Initialize Window
-	window := sdl2.CreateWindow(
-		"Odin-Nes",
-		sdl2.WINDOWPOS_CENTERED,
-		sdl2.WINDOWPOS_CENTERED,
-		1280,
-		720,
-		sdl2.WINDOW_ALLOW_HIGHDPI | sdl2.WINDOW_OPENGL | sdl2.WINDOW_RESIZABLE,
-	)
-	if window == nil {
-		fmt.printf("SDL2 Failed To Create Window {}\n", sdl2.GetError())
-	}
-	defer sdl2.DestroyWindow(window)
+	init_open_gl(&sdl_ctx)
 
-	sdl2.GL_SetAttribute(.CONTEXT_FLAGS, 0)
-	sdl2.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, 3)
-	sdl2.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 0)
-	sdl2.GL_SetAttribute(.CONTEXT_PROFILE_MASK, 1)
-	sdl2.GL_SetAttribute(.DOUBLEBUFFER, 1)
-	sdl2.GL_SetAttribute(.DEPTH_SIZE, 24)
-	sdl2.GL_SetAttribute(.STENCIL_SIZE, 8)
-
-	sdl2.GL_SetSwapInterval(1)
-
-	gl_context := sdl2.GL_CreateContext(window)
-	if gl_context == nil {
-		fmt.printf("Failed To Create GL Context {}\n", sdl2.GetError())
-	}
-	defer sdl2.GL_DeleteContext(gl_context)
-
-
-	sdl2.GL_MakeCurrent(window, gl_context)
-
-	gl.load_up_to(3, 0, sdl2.gl_set_proc_address)
-
-	im.CHECKVERSION()
-	im.CreateContext()
-	defer im.DestroyContext()
-
-	io := im.GetIO()
-	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
-	im.StyleColorsDark()
-
-	imgui_impl_sdl2.InitForOpenGL(window, gl_context)
-	defer imgui_impl_sdl2.Shutdown()
-
-	imgui_impl_opengl3.Init("#version 130")
-	defer imgui_impl_opengl3.Shutdown()
+	io := init_imgui(&sdl_ctx)
+	defer deinit_imgui(&sdl_ctx)
 
 	done := false
 
@@ -97,7 +47,7 @@ main :: proc() {
 
 		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
 
-		sdl2.GL_SwapWindow(window)
+		sdl2.GL_SwapWindow(sdl_ctx.window)
 	}
 
 
