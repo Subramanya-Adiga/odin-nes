@@ -23,6 +23,9 @@ main :: proc() {
 	io := init_imgui(&sdl_ctx)
 	defer deinit_imgui(&sdl_ctx)
 
+	disassm := cpu.disassemble(&nes_cpu, 0x0000, 0xFFFF)
+	shrink(&disassm)
+
 	done := false
 
 	for !done {
@@ -39,6 +42,7 @@ main :: proc() {
 		im.NewFrame()
 
 		im.ShowDemoWindow()
+		cpu_display(&nes_cpu, disassm, i32(len(disassm)))
 
 		im.Render()
 		gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
