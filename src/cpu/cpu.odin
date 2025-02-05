@@ -83,10 +83,12 @@ clock :: proc(cpu: ^NesCpu) {
 	}
 
 	if cpu._cpu_state.bus.irq && get_flag(cpu, .IntruptDisable) == 0 {
+		cpu._cpu_state.bus.irq = false
 		irq(cpu)
 	}
 
 	if cpu._cpu_state.bus.nmi {
+		cpu._cpu_state.bus.nmi = false
 		nmi(cpu)
 	}
 
@@ -124,9 +126,9 @@ disassemble :: proc(
 	addr_start: u16,
 	addr_end: u16,
 	allocator := context.allocator,
-) -> map[u16]string {
+) -> [dynamic]cstring {
 	cap := addr_start - addr_end
-	ret := make(map[u16]string, cap, allocator)
+	ret := make([dynamic]cstring, cap, allocator)
 
 	addr := u32(addr_start)
 	line_addr: u16 = 0
@@ -142,13 +144,13 @@ disassemble :: proc(
 		switch op.addressing_mode {
 		case .Accumilate:
 			{
-				str := fmt.aprint("{{ACC}}")
+				str := fmt.aprint("{ACC}")
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
 		case .Implied:
 			{
-				str := fmt.aprint("{{IMP}}")
+				str := fmt.aprint("{IMP}")
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -156,7 +158,7 @@ disassemble :: proc(
 			{
 				val := read(cpu._cpu_state.bus, u16(addr))
 				addr += 1
-				str := fmt.aprintf("#$ {:2X} {{IMM}}", val)
+				str := fmt.aprintf("#$ {:2X} {IMM}", val)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -164,7 +166,7 @@ disassemble :: proc(
 			{
 				val := read(cpu._cpu_state.bus, u16(addr))
 				addr += 1
-				str := fmt.aprintf("#$ {:2X} {{ZP0}}", val)
+				str := fmt.aprintf("#$ {:2X} {ZP0}", val)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -172,7 +174,7 @@ disassemble :: proc(
 			{
 				val := read(cpu._cpu_state.bus, u16(addr))
 				addr += 1
-				str := fmt.aprintf("#$ {:2X} , X {{ZPX}}", val)
+				str := fmt.aprintf("#$ {:2X} , X {ZPX}", val)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -180,7 +182,7 @@ disassemble :: proc(
 			{
 				val := read(cpu._cpu_state.bus, u16(addr))
 				addr += 1
-				str := fmt.aprintf("#$ {:2X} , Y {{ZPY}}", val)
+				str := fmt.aprintf("#$ {:2X} , Y {ZPY}", val)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -189,7 +191,7 @@ disassemble :: proc(
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$ {:2X} {{ABS}}", (hi << 8) | lo)
+				str := fmt.aprintf("$ {:2X} {ABS}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -197,7 +199,7 @@ disassemble :: proc(
 			{lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$ {:2X} , X {{ABS}}", (hi << 8) | lo)
+				str := fmt.aprintf("$ {:2X} , X {ABS}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")}
 		case .AbsoluteY:
@@ -205,7 +207,7 @@ disassemble :: proc(
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$ {:2X} , Y {{ABS}}", (hi << 8) | lo)
+				str := fmt.aprintf("$ {:2X} , Y {ABS}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -214,7 +216,7 @@ disassemble :: proc(
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$({:2X}) {{IND}}", (hi << 8) | lo)
+				str := fmt.aprintf("$({:2X}) {IND}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -223,7 +225,7 @@ disassemble :: proc(
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$({:2X} , X) {{IZX}}", (hi << 8) | lo)
+				str := fmt.aprintf("$({:2X} , X) {IZX}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -232,7 +234,7 @@ disassemble :: proc(
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
 				addr += 2
-				str := fmt.aprintf("$({:2X} , Y) {{IND}}", (hi << 8) | lo)
+				str := fmt.aprintf("$({:2X} , Y) {IND}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
@@ -240,12 +242,12 @@ disassemble :: proc(
 			{
 				val := read(cpu._cpu_state.bus, u16(addr))
 				addr += 1
-				str := fmt.aprintf("${:2X} [${:2X}] {{REL}}", val, addr + u32(val))
+				str := fmt.aprintf("${:2X} [${:2X}] {REL}", val, addr + u32(val))
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
 			}
 		}
-		ret[line_addr] = op_str
+		append(&ret, strings.clone_to_cstring(op_str))
 	}
 
 	return ret
