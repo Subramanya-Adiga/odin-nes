@@ -16,6 +16,7 @@ CartridgeState :: struct {
 	prog_rom: [dynamic]u8,
 	stream:   ^io.Stream,
 	char_rom: [dynamic]u8,
+	mapper:   Mapper,
 }
 
 init :: proc(file_stream: ^io.Stream) -> Cartridge {
@@ -31,14 +32,35 @@ deinit :: proc(cart: ^Cartridge) {
 }
 
 read_cpu :: proc(cart: ^Cartridge, addr: u16) -> u8 {
+	map_addr, map_data := mapper_cpu_read(&cart._state.mapper, addr)
+	if map_addr == 0xFFFFFFFF {
+		return map_data
+	} else {
+		return cart._state.prog_rom[map_addr]
+	}
+}
+
+write_cpu :: proc(cart: ^Cartridge, addr: u16, data: u8) {
+	map_addr, map_data := mapper_cpu_write(&cart._state.mapper, addr, data)
+	if map_addr != 0xFFFFFFFF {
+		cart._state.prog_rom[map_addr] = data
+	}
+}
+
+read_ppu :: proc(cart: ^Cartridge, addr: u16) -> u8 {
+	map_addr := mapper_ppu_read(&cart._state.mapper, addr)
+	if map_addr != 0 {
+		return cart._state.char_rom[map_addr]
+	}
 	return 0
 }
 
-write_cpu :: proc(cart: ^Cartridge, addr: u16, data: u8) {}
-
-read_ppu :: proc(cart: ^Cartridge, addr: u16) -> u8 {return 0}
-
-write_ppu :: proc(cart: ^Cartridge, addr: u16, data: u8) {}
+write_ppu :: proc(cart: ^Cartridge, addr: u16, data: u8) {
+	map_addr := mapper_ppu_write(&cart._state.mapper, addr)
+	if map_addr != 0 {
+		cart._state.char_rom[map_addr] = data
+	}
+}
 
 
 load :: proc(cart: ^Cartridge) {
@@ -67,5 +89,6 @@ load :: proc(cart: ^Cartridge) {
 
 	if err_prg == nil && err_chr == nil {
 		cart.valid_image = true
+		cart._state.mapper = mapper_init(cart)
 	}
 }
