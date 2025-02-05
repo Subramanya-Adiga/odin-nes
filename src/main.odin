@@ -42,7 +42,7 @@ main :: proc() {
 		im.NewFrame()
 
 		im.ShowDemoWindow()
-		cpu_display(&nes_cpu, disassm, i32(len(disassm)))
+		cpu_display(&nes_cpu, disassm, i32(cap(disassm)))
 
 		im.Render()
 		gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
@@ -53,6 +53,5 @@ main :: proc() {
 
 		sdl2.GL_SwapWindow(sdl_ctx.window)
 	}
-
 
 }

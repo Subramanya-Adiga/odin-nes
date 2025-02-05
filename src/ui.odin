@@ -19,65 +19,63 @@ cpu_display :: proc(dis_cpu: ^cpu.NesCpu, info: [dynamic]cstring, length: i32) {
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Overflow) != 0 else COLOR_RED,
 		"V",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Unused) != 0 else COLOR_RED,
 		"-",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Break) != 0 else COLOR_RED,
 		"B",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Decimal) != 0 else COLOR_RED,
 		"D",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.IntruptDisable) != 0 else COLOR_RED,
 		"I",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Zero) != 0 else COLOR_RED,
 		"Z",
 	)
 	im.SameLine()
 	im.TextColored(
-		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Negative) != 0 else COLOR_RED,
+		COLOR_GREEN if dis_cpu.status & u8(cpu.NesCpuFlags.Carry) != 0 else COLOR_RED,
 		"C",
 	)
 
 	im.Spacing()
-	im.Text("PC: %x", dis_cpu.pc)
-	im.Text("A: $%x [%d]", dis_cpu.a)
-	im.Text("X: $%x [%d]", dis_cpu.x)
-	im.Text("Y: $%x [%d]", dis_cpu.y)
-	im.Text("Stack Pointer: $%x", dis_cpu.stack_p)
+	im.Text("PC: %X", dis_cpu.pc)
+	im.Text("A: $%X [%d]", dis_cpu.a)
+	im.Text("X: $%X [%d]", dis_cpu.x)
+	im.Text("Y: $%X [%d]", dis_cpu.y)
+	im.Text("Stack Pointer: $%X", dis_cpu.stack_p)
 
-	pc_tmp: i32 = 0
+	pc_tmp: i32 = i32(dis_cpu.pc)
 	im.Spacing()
 	if im.BeginListBox(
 		"##Disassembly",
 		im.Vec2{-math.F32_MIN, 24 * im.GetTextLineHeightWithSpacing()},
 	) {
 		for i in 0 ..< length {
+			selected: bool = (pc_tmp == i)
+			flags: im.SelectableFlags = {.Highlight} if pc_tmp == i else {.NoAutoClosePopups}
 			if info[i] != nil {
-				selected: bool = (pc_tmp == i)
-				flags: im.SelectableFlags
-				if pc_tmp == i {flags = {.Highlight}} else {flags = {.NoAutoClosePopups}}
-
 				if im.Selectable(info[i], selected, flags) {
 					pc_tmp = i
 				}
-				if selected {
-					im.SetItemDefaultFocus()
-				}
+			}
+			if selected {
+				im.SetItemDefaultFocus()
 			}
 		}
 		im.EndListBox()

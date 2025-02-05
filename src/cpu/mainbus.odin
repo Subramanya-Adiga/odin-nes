@@ -20,7 +20,7 @@ read :: proc(bus: ^NesBus, addr: u16) -> u8 {
 	case 0 ..= 0x1FFF:
 		return bus.memory[addr & 0x7FF]
 	case 0x2000 ..= 0x3FFF:
-		fmt.print("PPU Not Implemented")
+	// fmt.print("PPU Not Implemented")
 	case 0x4020 ..= 0xFFFF:
 		return cartridge.read_cpu(&bus.cart, addr)
 	}
@@ -32,7 +32,7 @@ write :: proc(bus: ^NesBus, addr: u16, data: u8) {
 	case 0 ..= 0x1FFF:
 		bus.memory[addr & 0x7FF] = data
 	case 0x2000 ..= 0x3FFF:
-		fmt.print("PPU Not Implemented")
+	// fmt.print("PPU Not Implemented")
 	case 0x4020 ..= 0xFFFF:
 		cartridge.write_cpu(&bus.cart, addr, data)
 	}
@@ -48,5 +48,4 @@ load_cartridge :: proc(bus: ^NesBus, path: string) {
 
 	bus.cart = cartridge.init(&file_stream)
 	cartridge.load(&bus.cart)
-	_ = cartridge.read_cpu(&bus.cart, 0)
 }
