@@ -72,15 +72,49 @@ init_open_gl :: proc(ctx: ^SDLContext) {
 	}
 }
 
-init_imgui :: proc(ctx: ^SDLContext) -> ^im.IO {
+init_imgui :: proc(ctx: ^SDLContext) {
 	im.CHECKVERSION()
 	im.CreateContext()
 	io := im.GetIO()
-	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad}
+	io.ConfigFlags += {.NavEnableKeyboard, .NavEnableGamepad, .DockingEnable, .ViewportsEnable}
+
 	im.StyleColorsDark()
+	styles := im.GetStyle()
+	styles.WindowRounding = 0.0
+	styles.Colors[im.Col.WindowBg].w = 1.0
+
 	imgui_impl_sdl2.InitForOpenGL(ctx.window, ctx.gl_context)
 	imgui_impl_opengl3.Init("#version 130")
-	return io
+
+}
+
+imgui_new_frame :: proc() {
+	imgui_impl_opengl3.NewFrame()
+	imgui_impl_sdl2.NewFrame()
+	im.NewFrame()
+}
+
+imgui_flush_frame :: proc(window: ^sdl2.Window) {
+	io := im.GetIO()
+
+	im.Render()
+	gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
+	gl.ClearColor(0.556, 0.629, 0.830, 255.0)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+
+	imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
+
+	imgui_update_viewports()
+
+	sdl2.GL_SwapWindow(window)
+}
+
+imgui_update_viewports :: proc() {
+	backup_window := sdl2.GL_GetCurrentWindow()
+	backup_context := sdl2.GL_GetCurrentContext()
+	im.UpdatePlatformWindows()
+	im.RenderPlatformWindowsDefault()
+	sdl2.GL_MakeCurrent(backup_window, backup_context)
 }
 
 deinit_imgui :: proc(ctx: ^SDLContext) {

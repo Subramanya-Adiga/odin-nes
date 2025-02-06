@@ -5,7 +5,6 @@ import "../thirdparty/imgui/imgui_impl_opengl3"
 import "../thirdparty/imgui/imgui_impl_sdl2"
 import "core:fmt"
 import "cpu"
-import gl "vendor:OpenGL"
 import "vendor:sdl2"
 
 main :: proc() {
@@ -20,8 +19,10 @@ main :: proc() {
 
 	init_open_gl(&sdl_ctx)
 
-	io := init_imgui(&sdl_ctx)
+	init_imgui(&sdl_ctx)
 	defer deinit_imgui(&sdl_ctx)
+
+	io := im.GetIO()
 
 	disassm := cpu.disassemble(&nes_cpu, 0x0000, 0xFFFF)
 	shrink(&disassm)
@@ -37,21 +38,13 @@ main :: proc() {
 			}
 		}
 
-		imgui_impl_opengl3.NewFrame()
-		imgui_impl_sdl2.NewFrame()
-		im.NewFrame()
+		imgui_new_frame()
 
 		im.ShowDemoWindow()
 		cpu_display(&nes_cpu, disassm, i32(cap(disassm)))
 
-		im.Render()
-		gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
-		gl.ClearColor(0.556, 0.629, 0.830, 255.0)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
+		imgui_flush_frame(sdl_ctx.window)
 
-		imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
-
-		sdl2.GL_SwapWindow(sdl_ctx.window)
 	}
 
 }
