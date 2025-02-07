@@ -9,7 +9,7 @@ import "cpu"
 COLOR_RED :: im.Vec4{0.880, 0.0176, 0.0176, 255.0}
 COLOR_GREEN :: im.Vec4{0.0195, 0.650, 0.0826, 255.0}
 
-cpu_display :: proc(dis_cpu: ^cpu.NesCpu, info: [dynamic]cstring, length: i32) {
+cpu_display :: proc(dis_cpu: ^cpu.NesCpu, info: [dynamic]cpu.Dissassembly, length: i32) {
 	im.Begin("Cpu", nil)
 
 	im.Text("Status Flags: ")
@@ -55,23 +55,21 @@ cpu_display :: proc(dis_cpu: ^cpu.NesCpu, info: [dynamic]cstring, length: i32) {
 
 	im.Spacing()
 	im.Text("PC: %X", dis_cpu.pc)
-	im.Text("A: $%X [%d]", dis_cpu.a)
-	im.Text("X: $%X [%d]", dis_cpu.x)
-	im.Text("Y: $%X [%d]", dis_cpu.y)
+	im.Text("A: $%X [%d]", dis_cpu.a, dis_cpu.a)
+	im.Text("X: $%X [%d]", dis_cpu.x, dis_cpu.x)
+	im.Text("Y: $%X [%d]", dis_cpu.y, dis_cpu.y)
 	im.Text("Stack Pointer: $%X", dis_cpu.stack_p)
 
-	pc_tmp: i32 = i32(dis_cpu.pc)
 	im.Spacing()
 	if im.BeginListBox(
 		"##Disassembly",
 		im.Vec2{-math.F32_MIN, 24 * im.GetTextLineHeightWithSpacing()},
 	) {
 		for i in 0 ..< length {
-			selected: bool = (pc_tmp == i)
-			flags: im.SelectableFlags = {.Highlight} if pc_tmp == i else {.NoAutoClosePopups}
-			if info[i] != nil {
-				if im.Selectable(info[i], selected, flags) {
-					pc_tmp = i
+			selected: bool = (info[i].pc == u32(dis_cpu.pc))
+			flags: im.SelectableFlags = {.Highlight} if selected else {.NoAutoClosePopups}
+			if info[i].instruction != nil {
+				if im.Selectable(info[i].instruction, selected, flags) {
 				}
 			}
 			if selected {

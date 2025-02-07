@@ -4,6 +4,11 @@ import "core:fmt"
 import "core:io"
 import "core:strings"
 
+Dissassembly :: struct {
+	pc:          u32,
+	instruction: cstring,
+}
+
 NesCpu :: struct {
 	a:          u8,
 	x:          u8,
@@ -126,9 +131,9 @@ disassemble :: proc(
 	addr_start: u16,
 	addr_end: u16,
 	allocator := context.allocator,
-) -> [dynamic]cstring {
+) -> [dynamic]Dissassembly {
 	cap := addr_end - addr_start
-	ret := make([dynamic]cstring, cap, allocator)
+	ret := make([dynamic]Dissassembly, cap, allocator)
 
 	addr := u32(addr_start)
 	line_addr: u16 = 0
@@ -224,7 +229,7 @@ disassemble :: proc(
 			{
 				lo := read(cpu._cpu_state.bus, u16(addr))
 				hi := read(cpu._cpu_state.bus, u16(addr + 1))
-				addr += 2
+				addr += 1
 				str := fmt.aprintf("$({:2X} , X) {{IZX}}", (hi << 8) | lo)
 				defer delete(str)
 				op_str = strings.join({op_str, str}, " ")
@@ -247,7 +252,10 @@ disassemble :: proc(
 				op_str = strings.join({op_str, str}, " ")
 			}
 		}
-		append(&ret, strings.clone_to_cstring(op_str))
+		append(
+			&ret,
+			Dissassembly{pc = u32(line_addr), instruction = strings.clone_to_cstring(op_str)},
+		)
 	}
 
 	return ret
