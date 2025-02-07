@@ -8,7 +8,15 @@ Cartridge :: struct {
 	prog_banks:  u8,
 	char_banks:  u8,
 	mapper_type: u8,
+	mirror:      MirrorMode,
 	_state:      CartridgeState,
+}
+
+MirrorMode :: enum {
+	Vertical,
+	Horizontal,
+	Onscreen_LO,
+	OneScreen_HI,
 }
 
 @(private)
@@ -74,6 +82,7 @@ load :: proc(cart: ^Cartridge) {
 
 	mapper1, _ := io.read_byte(cart._state.stream^)
 	mapper2, _ := io.read_byte(cart._state.stream^)
+	cart.mirror = .Vertical if (mapper1 & 0x01) != 0 else .Horizontal
 
 	io.seek(cart._state.stream^, 8, io.Seek_From.Current)
 	if mapper1 & 0x04 != 0 {
