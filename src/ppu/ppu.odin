@@ -34,7 +34,7 @@ deinit_ppu :: proc(ppu: ^PPU) {
 
 
 clock :: proc(ppu: ^PPU) {
-	rect: sdl2.Rect = {1, 1, i32(ppu.cycles - 1), i32(ppu.scanlines)}
+	rect: sdl2.Rect = {i32(ppu.cycles - 1), i32(ppu.scanlines), 1, 1}
 	sdl2.FillRect(
 		ppu.screen,
 		&rect,
