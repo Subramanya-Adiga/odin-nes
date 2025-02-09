@@ -37,22 +37,7 @@ main :: proc() {
 	frame_complete := false
 	pal := ppu.Palette
 
-	tex_id: u32
-	gl.GenTextures(1, &tex_id)
-	gl.BindTexture(gl.TEXTURE_2D, tex_id)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
-		0,
-		gl.RGBA8,
-		draw_surface.w,
-		draw_surface.h,
-		0,
-		gl.RGB,
-		gl.UNSIGNED_BYTE,
-		draw_surface.pixels,
-	)
+	tex_id: u32 = create_texture()
 
 	done := false
 
@@ -82,17 +67,7 @@ main :: proc() {
 				if scanlines >= 261 {
 					scanlines = -1
 					frame_complete = true
-					gl.TexImage2D(
-						gl.TEXTURE_2D,
-						0,
-						gl.RGBA8,
-						draw_surface.w,
-						draw_surface.h,
-						0,
-						gl.RGB,
-						gl.UNSIGNED_BYTE,
-						draw_surface.pixels,
-					)
+					update_texture(tex_id, draw_surface.w, draw_surface.h, draw_surface.pixels)
 				}
 			}
 		}

@@ -122,3 +122,25 @@ deinit_imgui :: proc(ctx: ^SDLContext) {
 	imgui_impl_opengl3.Shutdown()
 	im.DestroyContext()
 }
+
+create_texture :: proc() -> u32 {
+	tex_id: u32
+	gl.GenTextures(1, &tex_id)
+	gl.BindTexture(gl.TEXTURE_2D, tex_id)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP)
+
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+
+	return tex_id
+}
+
+update_texture :: proc(id: u32, width: i32, height: i32, data: rawptr) {
+	gl.BindTexture(gl.TEXTURE_2D, id)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, data)
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+}
