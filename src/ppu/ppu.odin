@@ -12,6 +12,11 @@ PPU :: struct {
 	screen:         ^sdl2.Surface,
 	patter_images:  [2]^sdl2.Surface,
 	pal_screen:     [64]sdl2.Color,
+	ctrl_reg:       ControlRegister,
+	mask_reg:       MaskRegister,
+	stat_reg:       StatusRegister,
+	vram_addr:      LoopyRegister,
+	tram_addr:      LoopyRegister,
 }
 
 init_ppu :: proc(cartridge: ^cart.Cartridge) -> PPU {
@@ -57,4 +62,9 @@ reset :: proc(ppu: ^PPU) {
 	ppu.frame_complete = false
 	ppu.scanlines = 0
 	ppu.cycles = 0
+	ppu.ctrl_reg.register = 0
+	ppu.stat_reg.register = 0
+	ppu.mask_reg.register = 0
+	ppu.vram_addr.register = 0
+	ppu.tram_addr.register = 0
 }
