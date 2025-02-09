@@ -7,10 +7,11 @@ import Nes "cpu"
 import "ppu"
 
 Emulator :: struct {
-	cpu:  Nes.NesCpu,
-	bus:  Nes.NesBus,
-	ppu:  ppu.PPU,
-	cart: cartridge.Cartridge,
+	cpu:     Nes.NesCpu,
+	bus:     Nes.NesBus,
+	ppu:     ppu.PPU,
+	cart:    cartridge.Cartridge,
+	counter: u32,
 }
 
 init :: proc(emu: ^Emulator) {
@@ -22,6 +23,18 @@ init :: proc(emu: ^Emulator) {
 
 deinit :: proc(emu: ^Emulator) {
 	cartridge.deinit(&emu.cart)
+}
+
+clock :: proc(emu: ^Emulator) {
+	ppu.clock(&emu.ppu)
+	if emu.counter % 3 == 0 {
+		Nes.clock(&emu.cpu)
+	}
+	if emu.ppu.nmi {
+		emu.ppu.nmi = false
+		emu.bus.nmi = true
+	}
+	emu.counter += 1
 }
 
 reset :: proc(emu: ^Emulator) {

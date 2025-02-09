@@ -31,13 +31,6 @@ main :: proc() {
 	disassm := cpu.disassemble(&nes.cpu, 0x0000, 0xFFFF)
 	shrink(&disassm)
 
-	draw_surface := sdl2.CreateRGBSurface(0, 256, 240, 24, 0, 0, 0, 0)
-	defer sdl2.FreeSurface(draw_surface)
-	cycles: i16 = 0
-	scanlines: i16 = 0
-	frame_complete := false
-	pal := ppu.Palette
-
 	tex_id: u32 = create_texture()
 
 	done := false
@@ -51,29 +44,11 @@ main :: proc() {
 			}
 		}
 
-		for !frame_complete {
-			rect: sdl2.Rect = {i32(cycles - 1), i32(scanlines), 1, 1}
-			sdl2.FillRect(
-				draw_surface,
-				&rect,
-				ppu.color_to_u32(
-					draw_surface.format,
-					pal[0x30 if rand.uint32() % 2 == 0 else 0x3F],
-				),
-			)
-			cycles += 1
-			if cycles >= 341 {
-				cycles = 0
-				scanlines += 1
-				if scanlines >= 261 {
-					scanlines = -1
-					frame_complete = true
-					update_texture(tex_id, draw_surface.w, draw_surface.h, draw_surface.pixels)
-				}
-			}
+		for !nes.ppu.frame_complete {
+			clock(&nes)
 		}
-
-		frame_complete = false
+		nes.ppu.frame_complete = false
+		update_texture(tex_id, nes.ppu.screen.w, nes.ppu.screen.h, nes.ppu.screen.pixels)
 
 		imgui_new_frame()
 
@@ -81,8 +56,8 @@ main :: proc() {
 		cpu_display(&nes.cpu, disassm, i32(cap(disassm)))
 		im.Begin("OpenGL Texture Test")
 		im.Text("Pointer: %X", tex_id)
-		im.Text("Size: %d x %d", draw_surface.w, draw_surface.h)
-		im.Image(im.TextureID(tex_id), {f32(draw_surface.w * 2), f32(draw_surface.h * 2)})
+		im.Text("Size: %d x %d", nes.ppu.screen.w, nes.ppu.screen.h)
+		im.Image(im.TextureID(tex_id), {f32(nes.ppu.screen.w * 2), f32(nes.ppu.screen.h * 2)})
 		im.End()
 		imgui_flush_frame(sdl_ctx.window)
 

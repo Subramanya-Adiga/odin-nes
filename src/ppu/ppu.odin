@@ -28,9 +28,9 @@ init_ppu :: proc(cartridge: ^cart.Cartridge) -> PPU {
 	ret.bus.cartridge = cartridge
 	ret.pal_screen = Palette
 
-	ret.screen = sdl2.CreateRGBSurface(0, 256, 240, 32, 0, 0, 0, 0)
-	ret.patter_images[0] = sdl2.CreateRGBSurface(0, 128, 128, 32, 0, 0, 0, 0)
-	ret.patter_images[1] = sdl2.CreateRGBSurface(0, 128, 128, 32, 0, 0, 0, 0)
+	ret.screen = sdl2.CreateRGBSurface(0, 256, 240, 24, 0, 0, 0, 0)
+	ret.patter_images[0] = sdl2.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
+	ret.patter_images[1] = sdl2.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
 
 	return ret
 }
