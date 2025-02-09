@@ -6,6 +6,7 @@ import "vendor:sdl2"
 
 PPU :: struct {
 	bus:            PPUBus,
+	nmi:            bool,
 	cycles:         i16,
 	scanlines:      i16,
 	frame_complete: bool,
@@ -48,6 +49,15 @@ clock :: proc(ppu: ^PPU) {
 		&rect,
 		color_to_u32(ppu.screen.format, ppu.pal_screen[0x30 if rand.uint32() % 2 != 0 else 0x3F]),
 	)
+
+	if ppu.scanlines >= 241 && ppu.scanlines < 261 {
+		if ppu.cycles == 241 && ppu.cycles == 1 {
+			ppu.stat_reg.flags.v_blank = 1
+			if ppu.ctrl_reg.flags.v_blank_nmi == 1 {
+				ppu.nmi = true
+			}
+		}
+	}
 
 	ppu.cycles += 1
 	if ppu.cycles >= 341 {
