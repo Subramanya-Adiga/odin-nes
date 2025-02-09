@@ -11,11 +11,12 @@ import gl "vendor:OpenGL"
 import "vendor:sdl2"
 
 main :: proc() {
-	bus: cpu.NesBus = {}
-	cpu.load_cartridge(&bus, "nestest.nes")
+	nes: Emulator = {}
+	load_cartridge(&nes, "nestest.nes")
+	init(&nes)
+	reset(&nes)
+	defer deinit(&nes)
 
-	nes_cpu := cpu.init_cpu(&bus)
-	cpu.reset(&nes_cpu)
 
 	sdl_ctx := init_sdl()
 	defer deinit_sdl(&sdl_ctx)
@@ -27,7 +28,7 @@ main :: proc() {
 
 	io := im.GetIO()
 
-	disassm := cpu.disassemble(&nes_cpu, 0x0000, 0xFFFF)
+	disassm := cpu.disassemble(&nes.cpu, 0x0000, 0xFFFF)
 	shrink(&disassm)
 
 	draw_surface := sdl2.CreateRGBSurface(0, 256, 240, 24, 0, 0, 0, 0)
@@ -77,7 +78,7 @@ main :: proc() {
 		imgui_new_frame()
 
 		im.ShowDemoWindow()
-		cpu_display(&nes_cpu, disassm, i32(cap(disassm)))
+		cpu_display(&nes.cpu, disassm, i32(cap(disassm)))
 		im.Begin("OpenGL Texture Test")
 		im.Text("Pointer: %X", tex_id)
 		im.Text("Size: %d x %d", draw_surface.w, draw_surface.h)
