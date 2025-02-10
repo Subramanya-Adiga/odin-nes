@@ -49,7 +49,7 @@ LoopyRegister :: struct #raw_union {
 }
 
 increment_addr :: proc(ppu: ^PPU) {
-	inc: u16 = 32 if ppu.ctrl_reg.flags.increment_mode != 0 else 1
+	inc: u16 = 32 if ppu.ctrl_reg.flags.increment_mode == 1 else 1
 	ppu.vram_addr.register += inc
 }
 
@@ -74,9 +74,9 @@ write_to_control_register :: proc(ppu: ^PPU, data: u8) {
 
 write_to_address_register :: proc(ppu: ^PPU, data: u8) {
 	if !ppu.write_toggle {
-		ppu.tram_addr.register = u16(data) << 8 | (ppu.tram_addr.register & 0x00FF)
+		ppu.tram_addr.register = u16(data & 0x3F) << 8 | (ppu.tram_addr.register & 0x00FF)
 	} else {
-		ppu.tram_addr.register = (ppu.tram_addr.register & 0x00FF) | u16(data)
+		ppu.tram_addr.register = (ppu.tram_addr.register & 0xFF00) | u16(data)
 		ppu.vram_addr = ppu.tram_addr
 	}
 	ppu.write_toggle = !ppu.write_toggle
