@@ -1,16 +1,18 @@
 package cpu
 import "../cartridge"
+import "../controller"
 import "../ppu"
 import "core:fmt"
 import "core:io"
 import "core:os"
 
 NesBus :: struct {
-	memory: [2048]u8,
-	irq:    bool,
-	nmi:    bool,
-	ppu:    ^ppu.PPU,
-	cart:   ^cartridge.Cartridge,
+	memory:     [2048]u8,
+	irq:        bool,
+	nmi:        bool,
+	ppu:        ^ppu.PPU,
+	cart:       ^cartridge.Cartridge,
+	controller: ^controller.Controller,
 }
 
 read :: proc(bus: ^NesBus, addr: u16) -> u8 {
@@ -32,6 +34,10 @@ read :: proc(bus: ^NesBus, addr: u16) -> u8 {
 				return ppu.read_from_data_register(bus.ppu)
 			}
 		}
+	case 0x4016:
+		return controller.read_controller_one(bus.controller)
+	case 0x4017:
+		return controller.read_controller_two(bus.controller)
 	case 0x4020 ..= 0xFFFF:
 		return cartridge.read_cpu(bus.cart, addr)
 	}
@@ -61,6 +67,8 @@ write :: proc(bus: ^NesBus, addr: u16, data: u8) {
 
 			}
 		}
+	case 0x4016:
+		controller.write_to_controllers(bus.controller, data)
 	case 0x4020 ..= 0xFFFF:
 		cartridge.write_cpu(bus.cart, addr, data)
 	}

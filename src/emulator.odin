@@ -1,21 +1,24 @@
 package main
 
 import "cartridge"
+import "controller"
 import "core:io"
 import "core:os"
 import Nes "cpu"
 import "ppu"
 
 Emulator :: struct {
-	cpu:     Nes.NesCpu,
-	bus:     Nes.NesBus,
-	ppu:     ppu.PPU,
-	cart:    cartridge.Cartridge,
-	counter: u32,
+	cpu:        Nes.NesCpu,
+	bus:        Nes.NesBus,
+	ppu:        ppu.PPU,
+	cart:       cartridge.Cartridge,
+	controller: controller.Controller,
+	counter:    u32,
 }
 
 init :: proc(emu: ^Emulator) {
 	emu.bus.cart = &emu.cart
+	emu.bus.controller = &emu.controller
 	emu.ppu = ppu.init_ppu(&emu.cart)
 	emu.bus.ppu = &emu.ppu
 	emu.cpu = Nes.init_cpu(&emu.bus)
@@ -52,4 +55,12 @@ load_cartridge :: proc(emu: ^Emulator, path: string) {
 
 	emu.cart = cartridge.init(&file_stream)
 	cartridge.load(&emu.cart)
+}
+
+set_controller_one_status :: proc(emu: ^Emulator, Status: controller.Buttons) {
+	emu.controller.status1 = Status
+}
+
+set_controller_two_status :: proc(emu: ^Emulator, Status: controller.Buttons) {
+	emu.controller.status2 = Status
 }
