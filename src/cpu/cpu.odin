@@ -264,12 +264,13 @@ disassemble :: proc(
 @(private)
 irq :: proc(cpu: ^NesCpu) {
 	if get_flag(cpu, .IntruptDisable) == 0 {
-		stack_push(cpu, u8((cpu.pc >> 8)) & 0x00FF)
+		stack_push(cpu, u8(cpu.pc >> 8) & 0x00FF)
 		stack_push(cpu, u8(cpu.pc) & 0x00FF)
 
 		set_flag(cpu, .Break, false)
 		set_flag(cpu, .Unused, true)
 		set_flag(cpu, .IntruptDisable, true)
+		stack_push(cpu, cpu.status)
 
 		cpu._cpu_state.op_address = 0xFFFE
 
@@ -285,12 +286,13 @@ irq :: proc(cpu: ^NesCpu) {
 
 @(private)
 nmi :: proc(cpu: ^NesCpu) {
-	stack_push(cpu, u8((cpu.pc >> 8)) & 0x00FF)
+	stack_push(cpu, u8(cpu.pc >> 8) & 0x00FF)
 	stack_push(cpu, u8(cpu.pc) & 0x00FF)
 
 	set_flag(cpu, NesCpuFlags.Break, false)
 	set_flag(cpu, NesCpuFlags.Unused, true)
 	set_flag(cpu, NesCpuFlags.IntruptDisable, true)
+	stack_push(cpu, cpu.status)
 
 	cpu._cpu_state.op_address = 0xFFFA
 
