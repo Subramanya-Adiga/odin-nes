@@ -29,28 +29,28 @@ ppu_read :: proc(bus: ^PPUBus, addr: u16) -> u8 {
 		}
 	case 0x2000 ..= 0x3EFF:
 		{
-			addr := wrapper_addr & 0x0FFF
+			addr_wrap := wrapper_addr & 0x0FFF
 			if bus.cartridge.mirror == .Vertical {
-				switch (addr) {
+				switch (addr_wrap) {
 				case 0 ..= 0x03FF:
-					return bus.name_table[0][addr & 0x03FF]
+					return bus.name_table[0][addr_wrap & 0x03FF]
 				case 0x0400 ..= 0x07FF:
-					return bus.name_table[1][addr & 0x03FF]
+					return bus.name_table[1][addr_wrap & 0x03FF]
 				case 0x0800 ..= 0x0BFF:
-					return bus.name_table[0][addr & 0x03FF]
+					return bus.name_table[0][addr_wrap & 0x03FF]
 				case 0x0C00 ..= 0x0FFF:
-					return bus.name_table[0][addr & 0x03FF]
+					return bus.name_table[1][addr_wrap & 0x03FF]
 				}
 			} else if (bus.cartridge.mirror == .Horizontal) {
-				switch (addr) {
+				switch (addr_wrap) {
 				case 0 ..< 0x03FF:
-					return bus.name_table[0][addr & 0x03FF]
+					return bus.name_table[0][addr_wrap & 0x03FF]
 				case 0x0400 ..= 0x07FF:
-					return bus.name_table[0][addr & 0x03FF]
+					return bus.name_table[0][addr_wrap & 0x03FF]
 				case 0x0800 ..= 0x0BFF:
-					return bus.name_table[1][addr & 0x03FF]
+					return bus.name_table[1][addr_wrap & 0x03FF]
 				case 0x0C00 ..= 0x0FFF:
-					return bus.name_table[1][addr & 0x03FF]
+					return bus.name_table[1][addr_wrap & 0x03FF]
 				}
 			}
 		}
@@ -72,28 +72,28 @@ ppu_write :: proc(bus: ^PPUBus, addr: u16, data: u8) {
 		}
 	case 0x2000 ..= 0x3EFF:
 		{
-			addr := wrapper_addr & 0x0FFF
+			addr_wrap := wrapper_addr & 0x0FFF
 			if bus.cartridge.mirror == .Vertical {
-				switch (addr) {
+				switch (addr_wrap) {
 				case 0 ..= 0x03FF:
-					bus.name_table[0][addr & 0x03FF] = data
+					bus.name_table[0][addr_wrap & 0x03FF] = data
 				case 0x0400 ..= 0x07FF:
-					bus.name_table[1][addr & 0x03FF] = data
+					bus.name_table[1][addr_wrap & 0x03FF] = data
 				case 0x0800 ..= 0x0BFF:
-					bus.name_table[0][addr & 0x03FF] = data
+					bus.name_table[0][addr_wrap & 0x03FF] = data
 				case 0x0C00 ..= 0x0FFF:
-					bus.name_table[0][addr & 0x03FF] = data
+					bus.name_table[1][addr_wrap & 0x03FF] = data
 				}
 			} else if (bus.cartridge.mirror == .Horizontal) {
-				switch (addr) {
+				switch (addr_wrap) {
 				case 0 ..= 0x03FF:
-					bus.name_table[0][addr & 0x03FF] = data
+					bus.name_table[0][addr_wrap & 0x03FF] = data
 				case 0x0400 ..= 0x07FF:
-					bus.name_table[0][addr & 0x03FF] = data
+					bus.name_table[0][addr_wrap & 0x03FF] = data
 				case 0x0800 ..= 0x0BFF:
-					bus.name_table[1][addr & 0x03FF] = data
+					bus.name_table[1][addr_wrap & 0x03FF] = data
 				case 0x0C00 ..= 0x0FFF:
-					bus.name_table[1][addr & 0x03FF] = data
+					bus.name_table[1][addr_wrap & 0x03FF] = data
 				}
 			}
 		}

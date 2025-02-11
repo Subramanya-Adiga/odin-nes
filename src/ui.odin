@@ -93,7 +93,7 @@ draw_pattern_images_and_palette :: proc(
 	im.Begin("Pattern Data")
 
 	pat_surf1 := ppu.get_pattern_table(running_ppu, 0, palette_id)
-	pat_surf2 := ppu.get_pattern_table(running_ppu, 0, palette_id)
+	pat_surf2 := ppu.get_pattern_table(running_ppu, 1, palette_id)
 
 	update_texture(texture_id[0], pat_surf1.w, pat_surf1.h, pat_surf1.pixels)
 	update_texture(texture_id[1], pat_surf2.w, pat_surf2.h, pat_surf2.pixels)
@@ -104,7 +104,7 @@ draw_pattern_images_and_palette :: proc(
 
 	for pal in 0 ..< 4 {
 		for selection in 0 ..< 4 {
-			rect: sdl2.Rect = {8 + i32(selection * 28), 4 + i32(pal * 32), 28, 28}
+			rect: sdl2.Rect = {8 + i32(selection * 28), 2 + i32(pal * 32), 28, 28}
 			sdl2.FillRect(
 				palette_surface,
 				&rect,
