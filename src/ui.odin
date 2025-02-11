@@ -5,6 +5,8 @@ import "../thirdparty/imgui/imgui_impl_opengl3"
 import "../thirdparty/imgui/imgui_impl_sdl2"
 import "core:math"
 import "cpu"
+import "ppu"
+import "vendor:sdl2"
 
 COLOR_RED :: im.Vec4{0.880, 0.0176, 0.0176, 255.0}
 COLOR_GREEN :: im.Vec4{0.0195, 0.650, 0.0826, 255.0}
@@ -78,5 +80,46 @@ cpu_display :: proc(dis_cpu: ^cpu.NesCpu, info: [dynamic]cpu.Dissassembly, lengt
 		}
 		im.EndListBox()
 	}
+	im.End()
+}
+
+draw_pattern_images_and_palette :: proc(
+	running_ppu: ^ppu.PPU,
+	palette_id: u8,
+	texture_id: [2]u32,
+	palette_surface: ^sdl2.Surface,
+	palette_tex_id: u32,
+) {
+	im.Begin("Pattern Data")
+
+	pat_surf1 := ppu.get_pattern_table(running_ppu, 0, palette_id)
+	pat_surf2 := ppu.get_pattern_table(running_ppu, 0, palette_id)
+
+	update_texture(texture_id[0], pat_surf1.w, pat_surf1.h, pat_surf1.pixels)
+	update_texture(texture_id[1], pat_surf2.w, pat_surf2.h, pat_surf2.pixels)
+
+	im.Image(im.TextureID(texture_id[0]), {f32(256), f32(256)})
+	im.Image(im.TextureID(texture_id[1]), {f32(256), f32(256)})
+
+
+	for pal in 0 ..< 4 {
+		for selection in 0 ..< 4 {
+			rect: sdl2.Rect = {8 + i32(selection * 28), 4 + i32(pal * 32), 28, 28}
+			sdl2.FillRect(
+				palette_surface,
+				&rect,
+				ppu.color_to_u32(
+					palette_surface.format,
+					ppu.get_color_from_palette(running_ppu, u8(pal), u8(selection)),
+				),
+			)
+		}
+	}
+
+	update_texture(palette_tex_id, 128, 128, palette_surface.pixels)
+	im.Image(im.TextureID(palette_tex_id), {f32(128), f32(128)})
+	im.SameLine()
+	im.Image(im.TextureID(palette_tex_id), {f32(128), f32(128)})
+
 	im.End()
 }
