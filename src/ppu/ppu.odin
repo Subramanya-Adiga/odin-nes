@@ -99,8 +99,8 @@ clock :: proc(ppu: ^PPU) {
 				{
 					ppu.bg_next_tile_lsb = ppu_read(
 						&ppu.bus,
-						u16(ppu.ctrl_reg.flags.background_pattern << 12) +
-						u16(ppu.bg_next_tile_id << 4) +
+						(u16(ppu.ctrl_reg.flags.background_pattern) << 12) +
+						(u16(ppu.bg_next_tile_id) << 4) +
 						ppu.vram_addr.flags.fine_y +
 						0,
 					)
@@ -109,8 +109,8 @@ clock :: proc(ppu: ^PPU) {
 				{
 					ppu.bg_next_tile_lsb = ppu_read(
 						&ppu.bus,
-						u16(ppu.ctrl_reg.flags.background_pattern << 12) +
-						u16(ppu.bg_next_tile_id << 4) +
+						(u16(ppu.ctrl_reg.flags.background_pattern) << 12) +
+						(u16(ppu.bg_next_tile_id) << 4) +
 						ppu.vram_addr.flags.fine_y +
 						8,
 					)
