@@ -59,7 +59,7 @@ clock :: proc(ppu: ^PPU) {
 		}
 
 		if ppu.scanlines == -1 && ppu.cycles == 1 {
-			ppu.stat_reg.flags.v_blank = 0
+			ppu.stat_reg.v_blank = 0
 		}
 
 		if ((ppu.cycles >= 2) && (ppu.cycles < 258)) ||
@@ -79,17 +79,17 @@ clock :: proc(ppu: ^PPU) {
 					ppu.bg_next_tile_attrib = ppu_read(
 						&ppu.bus,
 						0x23C0 |
-						(ppu.vram_addr.flags.nametable_y << 11) |
-						(ppu.vram_addr.flags.nametable_x << 10) |
-						((ppu.vram_addr.flags.coarse_y >> 2) << 3) |
-						(ppu.vram_addr.flags.coarse_x >> 2),
+						(ppu.vram_addr.nametable_y << 11) |
+						(ppu.vram_addr.nametable_x << 10) |
+						((ppu.vram_addr.coarse_y >> 2) << 3) |
+						(ppu.vram_addr.coarse_x >> 2),
 					)
 
-					if (ppu.vram_addr.flags.coarse_y & 0x02) != 0 {
+					if (ppu.vram_addr.coarse_y & 0x02) != 0 {
 						ppu.bg_next_tile_attrib >>= 4
 					}
 
-					if ((ppu.vram_addr.flags.coarse_x & 0x02) != 0) {
+					if ((ppu.vram_addr.coarse_x & 0x02) != 0) {
 						ppu.bg_next_tile_attrib >>= 2
 					}
 
@@ -99,9 +99,9 @@ clock :: proc(ppu: ^PPU) {
 				{
 					ppu.bg_next_tile_lsb = ppu_read(
 						&ppu.bus,
-						(u16(ppu.ctrl_reg.flags.background_pattern) << 12) +
+						(u16(ppu.ctrl_reg.background_pattern) << 12) +
 						(u16(ppu.bg_next_tile_id) << 4) +
-						ppu.vram_addr.flags.fine_y +
+						ppu.vram_addr.fine_y +
 						0,
 					)
 				}
@@ -109,9 +109,9 @@ clock :: proc(ppu: ^PPU) {
 				{
 					ppu.bg_next_tile_msb = ppu_read(
 						&ppu.bus,
-						(u16(ppu.ctrl_reg.flags.background_pattern) << 12) +
+						(u16(ppu.ctrl_reg.background_pattern) << 12) +
 						(u16(ppu.bg_next_tile_id) << 4) +
-						ppu.vram_addr.flags.fine_y +
+						ppu.vram_addr.fine_y +
 						8,
 					)
 				}
@@ -138,9 +138,8 @@ clock :: proc(ppu: ^PPU) {
 
 	if ppu.scanlines >= 241 && ppu.scanlines < 261 {
 		if ppu.scanlines == 241 && ppu.cycles == 1 {
-			ppu.stat_reg.flags.v_blank = 1
-			if ppu.ctrl_reg.flags.v_blank_nmi == 1 {
-				fmt.print("nmi_set")
+			ppu.stat_reg.v_blank = 1
+			if ppu.ctrl_reg.v_blank_nmi != 0 {
 				ppu.nmi = true
 			}
 		}
@@ -215,36 +214,36 @@ load_shifters :: proc(ppu: ^PPU) {
 	ppu.bg_shifter_pattern_lo = (ppu.bg_shifter_pattern_lo & 0xFF00) | u16(ppu.bg_next_tile_lsb)
 	ppu.bg_shifter_pattern_hi = (ppu.bg_shifter_pattern_hi & 0xFF00) | u16(ppu.bg_next_tile_msb)
 
-	new_attrib_lo: u16 = ppu.bg_next_tile_attrib & 0b01 != 0 ? 0xFF : 0x00
+	new_attrib_lo: u16 = 0xFF if ppu.bg_next_tile_attrib & 0b01 != 0 else 0x00
 	ppu.bg_shifter_attrib_lo = (ppu.bg_shifter_attrib_lo & 0xFF00) | new_attrib_lo
-	new_attrib_hi: u16 = ppu.bg_next_tile_attrib & 0b10 != 0 ? 0xFF : 0x00
+	new_attrib_hi: u16 = 0xFF if ppu.bg_next_tile_attrib & 0b10 != 0 else 0x00
 	ppu.bg_shifter_attrib_hi = (ppu.bg_shifter_attrib_hi & 0xFF00) | new_attrib_hi
 }
 
 increment_x :: proc(ppu: ^PPU) {
 	if background_show(ppu) || sprite_show(ppu) {
-		if ppu.vram_addr.flags.coarse_x == 31 {
-			ppu.vram_addr.flags.coarse_x = 0
-			ppu.vram_addr.flags.nametable_x = ~ppu.vram_addr.flags.nametable_x
+		if ppu.vram_addr.coarse_x == 31 {
+			ppu.vram_addr.coarse_x = 0
+			ppu.vram_addr.nametable_x = ~ppu.vram_addr.nametable_x
 		} else {
-			ppu.vram_addr.flags.coarse_x += 1
+			ppu.vram_addr.coarse_x += 1
 		}
 	}
 }
 
 increment_y :: proc(ppu: ^PPU) {
 	if background_show(ppu) || sprite_show(ppu) {
-		if ppu.vram_addr.flags.fine_y < 7 {
-			ppu.vram_addr.flags.fine_y += 1
+		if ppu.vram_addr.fine_y < 7 {
+			ppu.vram_addr.fine_y += 1
 		} else {
-			ppu.vram_addr.flags.fine_y = 0
-			if ppu.vram_addr.flags.coarse_y == 29 {
-				ppu.vram_addr.flags.coarse_y = 0
-				ppu.vram_addr.flags.nametable_y = ~ppu.vram_addr.flags.nametable_y
-			} else if ppu.vram_addr.flags.coarse_y == 31 {
-				ppu.vram_addr.flags.coarse_y = 0
+			ppu.vram_addr.fine_y = 0
+			if ppu.vram_addr.coarse_y == 29 {
+				ppu.vram_addr.coarse_y = 0
+				ppu.vram_addr.nametable_y = ~ppu.vram_addr.nametable_y
+			} else if ppu.vram_addr.coarse_y == 31 {
+				ppu.vram_addr.coarse_y = 0
 			} else {
-				ppu.vram_addr.flags.coarse_y += 1
+				ppu.vram_addr.coarse_y += 1
 			}
 		}
 	}
@@ -252,15 +251,15 @@ increment_y :: proc(ppu: ^PPU) {
 
 transfer_x :: proc(ppu: ^PPU) {
 	if background_show(ppu) || sprite_show(ppu) {
-		ppu.vram_addr.flags.nametable_x = ppu.tram_addr.flags.nametable_x
-		ppu.vram_addr.flags.coarse_x = ppu.tram_addr.flags.coarse_x
+		ppu.vram_addr.nametable_x = ppu.tram_addr.nametable_x
+		ppu.vram_addr.coarse_x = ppu.tram_addr.coarse_x
 	}
 }
 
 transfer_y :: proc(ppu: ^PPU) {
 	if background_show(ppu) || sprite_show(ppu) {
-		ppu.vram_addr.flags.fine_y = ppu.tram_addr.flags.fine_y
-		ppu.vram_addr.flags.nametable_y = ppu.tram_addr.flags.nametable_y
-		ppu.vram_addr.flags.coarse_y = ppu.tram_addr.flags.coarse_y
+		ppu.vram_addr.fine_y = ppu.tram_addr.fine_y
+		ppu.vram_addr.nametable_y = ppu.tram_addr.nametable_y
+		ppu.vram_addr.coarse_y = ppu.tram_addr.coarse_y
 	}
 }
