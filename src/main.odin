@@ -50,18 +50,43 @@ main :: proc() {
 		event: sdl2.Event
 		for sdl2.PollEvent(&event) {
 			imgui_impl_sdl2.ProcessEvent(&event)
-			if event.type == sdl2.EventType.QUIT {
-				done = true
-			}
-			if event.type == sdl2.EventType.KEYDOWN {
-				if event.key.keysym.sym == sdl2.Keycode.p {
-					selected_pal += 1
-					selected_pal &= 0x07
+			#partial switch (event.type) {
+			case sdl2.EventType.QUIT:
+				{
+					done = true
 				}
-			}
-			if event.type == sdl2.EventType.KEYDOWN {
-				if event.key.keysym.sym == sdl2.Keycode.DOWN {
-					controller_one_status.down = 1
+			case sdl2.EventType.KEYDOWN, sdl2.EventType.KEYUP:
+				{
+					if event.key.keysym.scancode == sdl2.Scancode.P {
+						if event.key.state == sdl2.PRESSED {
+							selected_pal += 1
+							selected_pal &= 0x07
+						}
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.S {
+						controller_one_status.start = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.E {
+						controller_one_status.select = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.Z {
+						controller_one_status.a = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.X {
+						controller_one_status.b = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.LEFT {
+						controller_one_status.left = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.RIGHT {
+						controller_one_status.right = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.UP {
+						controller_one_status.up = event.key.state
+					}
+					if event.key.keysym.scancode == sdl2.Scancode.DOWN {
+						controller_one_status.down = event.key.state
+					}
 				}
 			}
 		}
