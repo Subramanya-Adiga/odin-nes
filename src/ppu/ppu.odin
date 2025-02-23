@@ -3,7 +3,7 @@ package ppu
 import cart "../cartridge"
 import "core:fmt"
 import "core:math/rand"
-import "vendor:sdl2"
+import sdl "vendor:sdl2"
 
 PPU :: struct {
 	bus:                   PPUBus,
@@ -11,9 +11,9 @@ PPU :: struct {
 	cycles:                i16,
 	scanlines:             i16,
 	frame_complete:        bool,
-	screen:                ^sdl2.Surface,
-	patter_images:         [2]^sdl2.Surface,
-	pal_screen:            [64]sdl2.Color,
+	screen:                ^sdl.Surface,
+	patter_images:         [2]^sdl.Surface,
+	pal_screen:            [64]sdl.Color,
 	write_toggle:          bool,
 	fine_x:                u8,
 	buffered_data:         u8,
@@ -37,17 +37,17 @@ init_ppu :: proc(cartridge: ^cart.Cartridge) -> PPU {
 	ret.bus.cartridge = cartridge
 	ret.pal_screen = Palette
 
-	ret.screen = sdl2.CreateRGBSurface(0, 256, 240, 24, 0, 0, 0, 0)
-	ret.patter_images[0] = sdl2.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
-	ret.patter_images[1] = sdl2.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
+	ret.screen = sdl.CreateRGBSurface(0, 256, 240, 24, 0, 0, 0, 0)
+	ret.patter_images[0] = sdl.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
+	ret.patter_images[1] = sdl.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
 
 	return ret
 }
 
 deinit_ppu :: proc(ppu: ^PPU) {
-	sdl2.FreeSurface(ppu.screen)
-	sdl2.FreeSurface(ppu.patter_images[0])
-	sdl2.FreeSurface(ppu.patter_images[1])
+	sdl.FreeSurface(ppu.screen)
+	sdl.FreeSurface(ppu.patter_images[0])
+	sdl.FreeSurface(ppu.patter_images[1])
 }
 
 
@@ -160,8 +160,8 @@ clock :: proc(ppu: ^PPU) {
 		bg_palette = u8(b1 << 1) | u8(b0)
 	}
 
-	rect: sdl2.Rect = {i32(ppu.cycles - 1), i32(ppu.scanlines), 1, 1}
-	sdl2.FillRect(
+	rect: sdl.Rect = {i32(ppu.cycles - 1), i32(ppu.scanlines), 1, 1}
+	sdl.FillRect(
 		ppu.screen,
 		&rect,
 		color_to_u32(ppu.screen.format, get_color_from_palette(ppu, bg_palette, bg_pixel)),

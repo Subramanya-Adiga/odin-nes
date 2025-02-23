@@ -1,15 +1,15 @@
 package main
 
-import im "../thirdparty/imgui"
-import "../thirdparty/imgui/imgui_impl_opengl3"
-import "../thirdparty/imgui/imgui_impl_sdl2"
+import im "../vendor/imgui"
+import "../vendor/imgui/imgui_impl_opengl3"
+import "../vendor/imgui/imgui_impl_sdl2"
 import "controller"
 import "core:fmt"
 import "core:math/rand"
 import "cpu"
 import "ppu"
 import gl "vendor:OpenGL"
-import "vendor:sdl2"
+import sdl "vendor:sdl2"
 
 main :: proc() {
 	nes: Emulator = {}
@@ -41,50 +41,50 @@ main :: proc() {
 
 	selected_pal: u8 = 0
 
-	pal_surface := sdl2.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
-	defer sdl2.FreeSurface(pal_surface)
+	pal_surface := sdl.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
+	defer sdl.FreeSurface(pal_surface)
 
 	done := false
 
 	for !done {
-		event: sdl2.Event
-		for sdl2.PollEvent(&event) {
+		event: sdl.Event
+		for sdl.PollEvent(&event) {
 			imgui_impl_sdl2.ProcessEvent(&event)
 			#partial switch (event.type) {
-			case sdl2.EventType.QUIT:
+			case sdl.EventType.QUIT:
 				{
 					done = true
 				}
-			case sdl2.EventType.KEYDOWN, sdl2.EventType.KEYUP:
+			case sdl.EventType.KEYDOWN, sdl.EventType.KEYUP:
 				{
-					if event.key.keysym.scancode == sdl2.Scancode.P {
-						if event.key.state == sdl2.PRESSED {
+					if event.key.keysym.scancode == sdl.Scancode.P {
+						if event.key.state == sdl.PRESSED {
 							selected_pal += 1
 							selected_pal &= 0x07
 						}
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.S {
+					if event.key.keysym.scancode == sdl.Scancode.S {
 						controller_one_status.start = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.E {
+					if event.key.keysym.scancode == sdl.Scancode.E {
 						controller_one_status.select = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.Z {
+					if event.key.keysym.scancode == sdl.Scancode.Z {
 						controller_one_status.a = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.X {
+					if event.key.keysym.scancode == sdl.Scancode.X {
 						controller_one_status.b = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.LEFT {
+					if event.key.keysym.scancode == sdl.Scancode.LEFT {
 						controller_one_status.left = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.RIGHT {
+					if event.key.keysym.scancode == sdl.Scancode.RIGHT {
 						controller_one_status.right = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.UP {
+					if event.key.keysym.scancode == sdl.Scancode.UP {
 						controller_one_status.up = event.key.state
 					}
-					if event.key.keysym.scancode == sdl2.Scancode.DOWN {
+					if event.key.keysym.scancode == sdl.Scancode.DOWN {
 						controller_one_status.down = event.key.state
 					}
 				}

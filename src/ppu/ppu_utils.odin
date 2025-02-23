@@ -1,17 +1,17 @@
 package ppu
 
-import "vendor:sdl2"
+import sdl "vendor:sdl2"
 
-color_to_u32 :: proc(format: ^sdl2.PixelFormat, color: sdl2.Color) -> u32 {
-	return sdl2.MapRGB(format, color.r, color.g, color.b)
+color_to_u32 :: proc(format: ^sdl.PixelFormat, color: sdl.Color) -> u32 {
+	return sdl.MapRGB(format, color.r, color.g, color.b)
 }
 
-get_color_from_palette :: proc(ppu: ^PPU, palette: u8, color: u8) -> sdl2.Color {
+get_color_from_palette :: proc(ppu: ^PPU, palette: u8, color: u8) -> sdl.Color {
 	return ppu.pal_screen[ppu_read(&ppu.bus, u16(0x3F00) + u16(palette << 2) + u16(color)) & 0x3F]
 
 }
 
-get_pattern_table :: proc(ppu: ^PPU, index: u8, palette: u8) -> ^sdl2.Surface {
+get_pattern_table :: proc(ppu: ^PPU, index: u8, palette: u8) -> ^sdl.Surface {
 	for tile_y in 0 ..< 16 {
 		for tile_x in 0 ..< 16 {
 			offset: u16 = u16(tile_y * 256) + u16(tile_x * 16)
@@ -27,9 +27,9 @@ get_pattern_table :: proc(ppu: ^PPU, index: u8, palette: u8) -> ^sdl2.Surface {
 					tile_lsb >>= 1
 					tile_msb >>= 1
 
-					rect := sdl2.Rect{i32((tile_x * 8) + (7 - col)), i32((tile_y * 8) + row), 1, 1}
+					rect := sdl.Rect{i32((tile_x * 8) + (7 - col)), i32((tile_y * 8) + row), 1, 1}
 
-					sdl2.FillRect(
+					sdl.FillRect(
 						ppu.patter_images[index],
 						&rect,
 						color_to_u32(

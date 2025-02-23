@@ -1,12 +1,12 @@
 package main
 
-import im "../thirdparty/imgui"
-import "../thirdparty/imgui/imgui_impl_opengl3"
-import "../thirdparty/imgui/imgui_impl_sdl2"
+import im "../vendor/imgui"
+import "../vendor/imgui/imgui_impl_opengl3"
+import "../vendor/imgui/imgui_impl_sdl2"
 import "core:math"
 import "cpu"
 import "ppu"
-import "vendor:sdl2"
+import sdl "vendor:sdl2"
 
 COLOR_RED :: im.Vec4{0.880, 0.0176, 0.0176, 255.0}
 COLOR_GREEN :: im.Vec4{0.0195, 0.650, 0.0826, 255.0}
@@ -87,7 +87,7 @@ draw_pattern_images_and_palette :: proc(
 	running_ppu: ^ppu.PPU,
 	palette_id: u8,
 	texture_id: [2]u32,
-	palette_surface: ^sdl2.Surface,
+	palette_surface: ^sdl.Surface,
 	palette_tex_id: u32,
 ) {
 	im.Begin("Pattern Data")
@@ -104,8 +104,8 @@ draw_pattern_images_and_palette :: proc(
 
 	for pal in 0 ..< 4 {
 		for selection in 0 ..< 4 {
-			rect: sdl2.Rect = {8 + i32(selection * 28), 2 + i32(pal * 32), 28, 28}
-			sdl2.FillRect(
+			rect: sdl.Rect = {8 + i32(selection * 28), 2 + i32(pal * 32), 28, 28}
+			sdl.FillRect(
 				palette_surface,
 				&rect,
 				ppu.color_to_u32(

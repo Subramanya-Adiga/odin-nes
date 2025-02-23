@@ -1,8 +1,8 @@
 package ppu
 
-import "vendor:sdl2"
+import sdl "vendor:sdl2"
 
-Palette :: [64]sdl2.Color {
+Palette :: [64]sdl.Color {
 	{84, 84, 84, 255},
 	{0, 30, 116, 255},
 	{8, 16, 144, 255},
