@@ -107,7 +107,7 @@ clock :: proc(ppu: ^PPU) {
 				}
 			case 6:
 				{
-					ppu.bg_next_tile_lsb = ppu_read(
+					ppu.bg_next_tile_msb = ppu_read(
 						&ppu.bus,
 						(u16(ppu.ctrl_reg.flags.background_pattern) << 12) +
 						(u16(ppu.bg_next_tile_id) << 4) +
