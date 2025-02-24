@@ -34,14 +34,14 @@ read_controller :: proc(controller: ^Controller, btn: Buttons, input: ^u16) -> u
 		return 1
 	}
 	pressed := bool((transmute(u8)btn & u8(input^)) > 0)
-	if controller.strobe {
+	if !controller.strobe {
 		input^ <<= 1
 	}
 	return u8(pressed)
 }
 
 write_to_controllers :: proc(controller: ^Controller, data: u8) {
-	controller.strobe = bool(data & 1)
+	controller.strobe = transmute(bool)(data & 1)
 	if controller.strobe {
 		controller.current_input1 = 1
 		controller.current_input2 = 1
