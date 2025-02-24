@@ -30,19 +30,16 @@ deinit :: proc(emu: ^Emulator) {
 
 clock :: proc(emu: ^Emulator) {
 	ppu.clock(&emu.ppu)
-	if emu.counter % 3 == 0 {
+	if emu.bus.clock_counter % 3 == 0 {
 		Nes.clock(&emu.cpu)
 	}
-	if emu.ppu.nmi {
-		emu.ppu.nmi = false
-		emu.bus.nmi = true
-	}
-	emu.counter += 1
+	Nes.clock_bus(&emu.bus)
 }
 
 reset :: proc(emu: ^Emulator) {
 	Nes.reset(&emu.cpu)
 	ppu.reset(&emu.ppu)
+	Nes.reset_bus(&emu.bus)
 }
 
 load_cartridge :: proc(emu: ^Emulator, path: string) {

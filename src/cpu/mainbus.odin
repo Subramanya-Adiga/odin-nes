@@ -7,12 +7,13 @@ import "core:io"
 import "core:os"
 
 NesBus :: struct {
-	memory:     [2048]u8,
-	irq:        bool,
-	nmi:        bool,
-	ppu:        ^ppu.PPU,
-	cart:       ^cartridge.Cartridge,
-	controller: ^controller.Controller,
+	memory:        [2048]u8,
+	irq:           bool,
+	nmi:           bool,
+	clock_counter: u32,
+	ppu:           ^ppu.PPU,
+	cart:          ^cartridge.Cartridge,
+	controller:    ^controller.Controller,
 }
 
 read :: proc(bus: ^NesBus, addr: u16) -> u8 {
@@ -72,4 +73,18 @@ write :: proc(bus: ^NesBus, addr: u16, data: u8) {
 	case 0x4020 ..= 0xFFFF:
 		cartridge.write_cpu(bus.cart, addr, data)
 	}
+}
+
+reset_bus :: proc(bus: ^NesBus) {
+	bus.clock_counter = 0
+	bus.nmi = false
+	bus.irq = false
+}
+
+clock_bus :: proc(bus: ^NesBus) {
+	if (bus.ppu.nmi) {
+		bus.nmi = true
+		bus.ppu.nmi = false
+	}
+	bus.clock_counter += 1
 }

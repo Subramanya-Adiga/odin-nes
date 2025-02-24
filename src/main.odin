@@ -63,6 +63,11 @@ main :: proc() {
 							selected_pal &= 0x07
 						}
 					}
+					if event.key.keysym.scancode == sdl.Scancode.R {
+						if event.key.state == sdl.PRESSED {
+							reset(&nes)
+						}
+					}
 					if event.key.keysym.scancode == sdl.Scancode.S {
 						controller_one_status.start = event.key.state
 					}
