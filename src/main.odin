@@ -41,7 +41,7 @@ main :: proc() {
 
 	selected_pal: u8 = 0
 
-	pal_surface := sdl.CreateRGBSurface(0, 128, 128, 24, 0, 0, 0, 0)
+	pal_surface := sdl.CreateRGBSurface(0, 256, 256, 24, 0, 0, 0, 0)
 	defer sdl.FreeSurface(pal_surface)
 
 	done := false

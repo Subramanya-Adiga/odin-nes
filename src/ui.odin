@@ -101,25 +101,41 @@ draw_pattern_images_and_palette :: proc(
 	im.Image(im.TextureID(texture_id[0]), {f32(256), f32(256)})
 	im.Image(im.TextureID(texture_id[1]), {f32(256), f32(256)})
 
+	pal_width := 58
+	pal_height := 22
+	padding := 8
+	offset := 12
 
-	for pal in 0 ..< 4 {
-		for selection in 0 ..< 4 {
-			rect: sdl.Rect = {8 + i32(selection * 28), 2 + i32(pal * 32), 28, 28}
+	sdl.FillRect(palette_surface, nil, 0x000000)
+
+	selection_rect: sdl.Rect = {
+		i32(offset - 2),
+		i32(offset - 2) + (i32(pal_height + padding) * i32(palette_id)),
+		i32(pal_width * 4) + 4,
+		i32(pal_height + 4),
+	}
+	sdl.FillRect(palette_surface, &selection_rect, 0xffffff)
+
+	for pal in 0 ..< 8 {
+		for col in 0 ..< 4 {
+			rect: sdl.Rect = {
+				i32(offset) + (i32(col) * i32(pal_width)),
+				i32(offset) + (i32(pal) * (i32(pal_height) + i32(padding))),
+				i32(pal_width),
+				i32(pal_height),
+			}
 			sdl.FillRect(
 				palette_surface,
 				&rect,
 				ppu.color_to_u32(
 					palette_surface.format,
-					ppu.get_color_from_palette(running_ppu, u8(pal), u8(selection)),
+					ppu.get_color_from_palette(running_ppu, u8(pal), u8(col)),
 				),
 			)
 		}
 	}
 
-	update_texture(palette_tex_id, 128, 128, palette_surface.pixels)
-	im.Image(im.TextureID(palette_tex_id), {f32(128), f32(128)})
-	im.SameLine()
-	im.Image(im.TextureID(palette_tex_id), {f32(128), f32(128)})
-
+	update_texture(palette_tex_id, palette_surface.w, palette_surface.h, palette_surface.pixels)
+	im.Image(im.TextureID(palette_tex_id), {f32(256), f32(256)})
 	im.End()
 }
