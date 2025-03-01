@@ -21,6 +21,7 @@ ControlRegister :: struct #raw_union {
 		increment_mode:      u8 | 1,
 		sprite_pattern:      u8 | 1,
 		background_pattern:  u8 | 1,
+		sprite_size:         u8 | 1,
 		master_slave_select: u8 | 1,
 		v_blank_nmi:         u8 | 1,
 	},
@@ -44,6 +45,7 @@ LoopyRegister :: struct #raw_union {
 		nametable_x: u16 | 1,
 		nametable_y: u16 | 1,
 		fine_y:      u16 | 3,
+		unused:      u16 | 1,
 	},
 	register:    u16,
 }
@@ -74,7 +76,8 @@ write_to_control_register :: proc(ppu: ^PPU, data: u8) {
 
 write_to_address_register :: proc(ppu: ^PPU, data: u8) {
 	if !ppu.write_toggle {
-		ppu.tram_addr.register = u16(data & 0x3F) << 8 | (ppu.tram_addr.register & 0x00FF)
+		write_data := u16(data & 0x3F) << 8 | (ppu.tram_addr.register & 0x00FF)
+		ppu.tram_addr.register = write_data
 	} else {
 		ppu.tram_addr.register = (ppu.tram_addr.register & 0xFF00) | u16(data)
 		ppu.vram_addr = ppu.tram_addr
