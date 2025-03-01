@@ -21,7 +21,7 @@ main :: proc() {
 	controller_one_status: controller.Buttons
 
 
-	sdl_ctx := init_sdl()
+	sdl_ctx := init_sdl("Odin-nes", 1420, 840)
 	defer deinit_sdl(&sdl_ctx)
 
 	init_open_gl(&sdl_ctx)
@@ -101,18 +101,15 @@ main :: proc() {
 			clock(&nes)
 		}
 		nes.ppu.frame_complete = false
-		update_texture(tex_id, nes.ppu.screen.w, nes.ppu.screen.h, nes.ppu.screen.pixels)
+		update_textureRGB(tex_id, nes.ppu.screen)
 
 		imgui_new_frame()
 
 		im.ShowDemoWindow()
 		cpu_display(&nes.cpu, disassm, i32(cap(disassm)))
 
-		im.Begin("OpenGL Texture Test")
-		im.Text("Pointer: %X", tex_id)
-		im.Text("Size: %d x %d", nes.ppu.screen.w, nes.ppu.screen.h)
-
-		im.Image(im.TextureID(tex_id), {f32(nes.ppu.screen.w * 2), f32(nes.ppu.screen.h * 2)})
+		im.Begin("Screen")
+		im.Image(im.TextureID(tex_id), {f32(810), f32(760)})
 		im.End()
 
 		draw_pattern_images_and_palette(

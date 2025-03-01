@@ -95,8 +95,8 @@ draw_pattern_images_and_palette :: proc(
 	pat_surf1 := ppu.get_pattern_table(running_ppu, 0, palette_id)
 	pat_surf2 := ppu.get_pattern_table(running_ppu, 1, palette_id)
 
-	update_texture(texture_id[0], pat_surf1.w, pat_surf1.h, pat_surf1.pixels)
-	update_texture(texture_id[1], pat_surf2.w, pat_surf2.h, pat_surf2.pixels)
+	update_textureRGB(texture_id[0], pat_surf1)
+	update_textureRGB(texture_id[1], pat_surf2)
 
 	im.Image(im.TextureID(texture_id[0]), {f32(256), f32(256)})
 	im.Image(im.TextureID(texture_id[1]), {f32(256), f32(256)})
@@ -135,7 +135,7 @@ draw_pattern_images_and_palette :: proc(
 		}
 	}
 
-	update_texture(palette_tex_id, palette_surface.w, palette_surface.h, palette_surface.pixels)
+	update_textureRGB(palette_tex_id, palette_surface)
 	im.Image(im.TextureID(palette_tex_id), {f32(256), f32(256)})
 	im.End()
 }

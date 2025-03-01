@@ -7,13 +7,15 @@ import "core:fmt"
 import gl "vendor:OpenGL"
 import sdl "vendor:sdl2"
 
+CLEAR_COLOR :: im.Vec4{0.556, 0.629, 0.830, 255.0}
+
 SDLContext :: struct {
 	initialized: bool,
 	window:      ^sdl.Window,
 	gl_context:  sdl.GLContext,
 }
 
-init_sdl :: proc() -> SDLContext {
+init_sdl :: proc(title: cstring, window_width: i32, window_height: i32) -> SDLContext {
 	ctx: SDLContext
 
 	//Initialize SDL
@@ -28,11 +30,11 @@ init_sdl :: proc() -> SDLContext {
 
 	//Initialize Window
 	ctx.window = sdl.CreateWindow(
-		"Odin-Nes",
+		title,
 		sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED,
-		1280,
-		720,
+		window_width,
+		window_height,
 		sdl.WINDOW_ALLOW_HIGHDPI | sdl.WINDOW_OPENGL | sdl.WINDOW_RESIZABLE,
 	)
 	if ctx.window == nil {
@@ -99,7 +101,7 @@ imgui_flush_frame :: proc(window: ^sdl.Window) {
 
 	im.Render()
 	gl.Viewport(0, 0, i32(io.DisplaySize.x), i32(io.DisplaySize.y))
-	gl.ClearColor(0.556, 0.629, 0.830, 255.0)
+	gl.ClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3])
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	imgui_impl_opengl3.RenderDrawData(im.GetDrawData())
@@ -139,8 +141,34 @@ create_texture :: proc() -> u32 {
 	return tex_id
 }
 
-update_texture :: proc(id: u32, width: i32, height: i32, data: rawptr) {
+update_textureRGB :: proc(id: u32, surface: ^sdl.Surface) {
 	gl.BindTexture(gl.TEXTURE_2D, id)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, data)
+	gl.TexImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA8,
+		surface.w,
+		surface.h,
+		0,
+		gl.RGB,
+		gl.UNSIGNED_BYTE,
+		surface.pixels,
+	)
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+}
+
+updata_textureRGBA :: proc(id: u32, surface: ^sdl.Surface) {
+	gl.BindTexture(gl.TEXTURE_2D, id)
+	gl.TexImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA8,
+		surface.w,
+		surface.h,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		surface.pixels,
+	)
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 }
