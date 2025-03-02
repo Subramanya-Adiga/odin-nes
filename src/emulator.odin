@@ -31,7 +31,9 @@ deinit :: proc(emu: ^Emulator) {
 clock :: proc(emu: ^Emulator) {
 	ppu.clock(&emu.ppu)
 	if emu.bus.clock_counter % 3 == 0 {
-		Nes.clock(&emu.cpu)
+		if (!emu.bus.dma_transfer) {
+			Nes.clock(&emu.cpu)
+		}
 	}
 	Nes.clock_bus(&emu.bus)
 }

@@ -50,6 +50,13 @@ LoopyRegister :: struct #raw_union {
 	register:    u16,
 }
 
+ObjectAttributeMemory :: struct {
+	y:         u8,
+	id:        u8,
+	attribute: u8,
+	x:         u8,
+}
+
 increment_addr :: proc(ppu: ^PPU) {
 	inc: u16 = 32 if ppu.ctrl_reg.increment_mode == 1 else 1
 	ppu.vram_addr.register += inc
@@ -61,6 +68,52 @@ background_show :: proc(ppu: ^PPU) -> bool {
 
 sprite_show :: proc(ppu: ^PPU) -> bool {
 	return ppu.mask_reg.show_sprite == 1
+}
+
+render_enabled :: proc(ppu: ^PPU) -> bool {
+	return background_show(ppu) || sprite_show(ppu)
+}
+
+write_to_oam_address :: proc(ppu: ^PPU, data: u8) {
+	ppu.oam_address = data
+}
+
+write_to_oam_data :: proc(ppu: ^PPU, data: u8) {
+	wrapper_idx := ppu.oam_address & 0x3F
+
+	switch (ppu.oam_address % 4) {
+	case 0:
+		ppu.oam[wrapper_idx].y = data
+	case 1:
+		ppu.oam[wrapper_idx].id = data
+	case 2:
+		ppu.oam[wrapper_idx].attribute = data
+	case 3:
+		ppu.oam[wrapper_idx].x = data
+	}
+
+	ppu.oam_write_counter += 1
+
+	if (ppu.oam_write_counter >= 4) {
+		ppu.oam_address += 1
+		ppu.oam_write_counter = 0
+	}
+}
+
+read_from_oam_data :: proc(ppu: ^PPU) -> u8 {
+	wrapper_idx := ppu.oam_address & 0x3F
+
+	switch (ppu.oam_address % 4) {
+	case 0:
+		return ppu.oam[wrapper_idx].y
+	case 1:
+		return ppu.oam[wrapper_idx].id
+	case 2:
+		return ppu.oam[wrapper_idx].attribute
+	case 3:
+		return ppu.oam[wrapper_idx].x
+	}
+	return 0
 }
 
 
@@ -116,4 +169,61 @@ read_from_data_register :: proc(ppu: ^PPU) -> u8 {
 	}
 	increment_addr(ppu)
 	return data
+}
+
+cpu_write :: proc(ppu: ^PPU, addr: u16, data: u8) {
+	switch (addr) {
+	case 0:
+		{ 	//Control
+			write_to_control_register(ppu, data)
+		}
+	case 1:
+		{ 	//Mask
+			write_to_mask_register(ppu, data)
+		}
+	case 2: //Status
+	case 3:
+		{ 	//OAMAddress
+			write_to_oam_address(ppu, data)
+		}
+	case 4:
+		{ 	//OAMData
+			write_to_oam_data(ppu, data)
+		}
+	case 5:
+		{ 	//Scroll
+			write_to_scroll_register(ppu, data)
+		}
+	case 6:
+		{ 	//PPUAddress
+			write_to_address_register(ppu, data)
+		}
+	case 7:
+		{ 	//PPUData
+			write_to_data_register(ppu, data)
+		}
+	}
+}
+
+cpu_read :: proc(ppu: ^PPU, addr: u16) -> u8 {
+	switch (addr) {
+	case 0: //Control
+	case 1: //Mask
+	case 2:
+		{ 	//Status
+			return read_from_status_register(ppu)
+		}
+	case 3: //OAMAddress
+	case 4:
+		{ 	//OAMData
+			return read_from_oam_data(ppu)
+		}
+	case 5: //Scroll
+	case 6: //PPUAddress
+	case 7:
+		{ 	//PPUData
+			return read_from_data_register(ppu)
+		}
+	}
+	return 0
 }
