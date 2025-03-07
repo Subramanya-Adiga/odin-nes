@@ -13,7 +13,7 @@ import sdl "vendor:sdl2"
 
 main :: proc() {
 	nes: Emulator = {}
-	load_cartridge(&nes, "nestest.nes")
+	load_cartridge(&nes, "smb.nes")
 	init(&nes)
 	reset(&nes)
 	defer deinit(&nes)
@@ -68,6 +68,14 @@ main :: proc() {
 							reset(&nes)
 						}
 					}
+					if event.key.keysym.scancode == sdl.Scancode.ESCAPE {
+						if event.key.state == sdl.PRESSED {
+							quit_event: sdl.Event
+							quit_event.type = sdl.EventType.QUIT
+							sdl.PushEvent(&quit_event)
+
+						}
+					}
 					if event.key.keysym.scancode == sdl.Scancode.S {
 						controller_one_status.start = event.key.state
 					}
@@ -96,6 +104,7 @@ main :: proc() {
 			}
 		}
 		set_controller_one_status(&nes, controller_one_status)
+
 
 		for !nes.ppu.frame_complete {
 			clock(&nes)
